@@ -1,0 +1,37 @@
+id: task.classify_request
+version: "1"
+status: draft
+description: Prompt for classifying a user request into a known SST capability.
+trace_policy: metadata_only
+visibility: internal_private
+provider_cache_policy: none
+compatible_providers:
+  - any
+compatible_models:
+  - any
+tags:
+  - tasks
+  - classification
+variables:
+  - name: user_request
+    type: string
+    required: true
+    sensitive: true
+    description: Request to classify.
+  - name: available_capabilities
+    type: string
+    required: true
+    sensitive: false
+    description: Capability list prepared by deterministic backend code.
+messages:
+  - role: system
+    template: |
+      Classify the user request into one available SST capability.
+      If no capability matches, return an explicit unknown classification.
+  - role: human
+    template: |
+      Available capabilities:
+      {available_capabilities}
+
+      User request:
+      {user_request}

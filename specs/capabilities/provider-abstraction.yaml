@@ -1,0 +1,38 @@
+version: 1
+kind: capability
+id: provider-abstraction
+status: draft
+title: Provider-agnostic agent model interface
+goal: Define the minimum capabilities any external or local AI provider must expose to feed SST agents.
+capabilities:
+  chat:
+    description: Single request and complete response.
+    required: true
+  stream:
+    description: Incremental response chunks for interactive workflows.
+    required: true
+  batch:
+    description: Multiple inputs processed through the same chain or model.
+    required: true
+  structured_output:
+    description: Typed response validated against a repo-owned schema.
+    required: true
+  retrieval_context:
+    description: Optional private context retrieved before generation.
+    required: false
+  tools:
+    description: Tool calling or function execution for future agent workflows.
+    required: false
+providers:
+  current_experimental:
+    - openai_via_langchain
+    - local_mock_runnable
+  future_candidates:
+    - anthropic
+    - deepseek
+    - local_model
+contract_rules:
+  - Provider SDKs must not leak into SST-facing interfaces.
+  - Unit tests must not require paid API quota.
+  - Provider errors must be normalized before they reach application workflows.
+  - POCs must document provider assumptions before promotion.

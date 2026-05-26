@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sst-chatbot-agent-lab"
+version = "0.1.0"
+description = "Python base for AI-driven agent experiments and future SST integrations."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain",
+    "langgraph",
+    "langsmith",
+    "langchain-openai",
+    "openai",
+    "python-dotenv",
+    "pydantic",
+    "pytest",
+    "PyYAML",
+]
+
+[project.optional-dependencies]
+notebooks = ["ipykernel"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

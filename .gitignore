@@ -1,0 +1,17 @@
+# Archivos de entorno y credenciales
+.env
+jupyter_settings.py
+
+# Carpetas de entorno virtual
+.venv/
+.venv310/
+
+# Otros archivos y carpetas a ignorar
+.DS_Store
+node_modules/
+.tmp/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.pytest_cache/
+debug.log

@@ -1,0 +1,43 @@
+version: 1
+kind: capability
+id: generated-workspace-governance
+status: candidate
+title: Generated ARDS/SDD workspace governance
+goal: Prevent generated user workspaces from accumulating irrelevant, redundant, or unsafe content.
+storage_categories:
+  conversation_history:
+    description: Raw or summarized interaction history. Not directly part of generated ARDS/SDD.
+  workspace_files:
+    description: Curated files that belong to the generated ARDS/SDD structure.
+  retrieval_index:
+    description: Filtered content approved for future RAG context.
+manifest:
+  required: true
+  candidate_path: .sst/manifest.yaml
+  required_fields:
+    - path
+    - kind
+    - status
+    - source
+    - version
+    - downloadable
+    - indexable
+    - user_visible
+file_statuses:
+  - draft
+  - active
+  - archived
+  - discarded
+rules:
+  - Conversation history must not automatically become workspace files.
+  - Workspace files must not automatically become retrieval context.
+  - Retrieval context must not automatically become downloadable output.
+  - Duplicate files should be handled as explicit updates or patches.
+  - Archived and discarded files should be excluded from retrieval by default.
+  - Downloads should include only active downloadable files.
+validation:
+  tests:
+    - Manifest rejects unsafe paths.
+    - Workspace layout can list downloadable files.
+    - Workspace layout can list indexable files.
+    - Archived and discarded files are excluded from default retrieval candidates.

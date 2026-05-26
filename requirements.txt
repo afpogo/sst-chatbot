@@ -1,0 +1,10 @@
+python-dotenv
+langchain
+langgraph
+langsmith
+openai
+langchain-openai
+pydantic
+ipykernel
+pytest
+PyYAML

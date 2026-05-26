@@ -1,0 +1,35 @@
+version: 1
+kind: poc
+id: application-context-connector-poc
+status: draft
+title: Application context connector POC
+goal: Prove that an application descriptor or runtime-like event feed can normalize app context for robots and ARDS memory without coupling to a specific SST module.
+notebook: labs/notebooks/application_context_connector_poc.ipynb
+implementation:
+  reusable_module: null
+  tests: null
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+environment:
+  required: []
+scope:
+  included:
+    - file connector descriptor
+    - mock CloudEvents-compatible event envelope
+    - Articles, Dictionary, Bitacoras, and Robots domain mapping
+    - robot scope filtering
+    - supported and blocked intent mapping
+  excluded:
+    - production webhooks
+    - production message broker
+    - server orchestration execution
+promotion_criteria:
+  - Add a reusable connector descriptor loader.
+  - Add schema validation for connector descriptors.
+  - Add tests proving runtime and file modes normalize to the same internal event shape.
+  - Document the consuming app integration boundary.
+discard_criteria:
+  - If each app chooses a bespoke robot context model with no shared contract.

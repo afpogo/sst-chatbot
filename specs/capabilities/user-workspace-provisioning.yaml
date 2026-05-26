@@ -1,0 +1,43 @@
+version: 1
+kind: capability
+id: user-workspace-provisioning
+status: candidate
+title: User workspace ARDS/SDD provisioning
+goal: Create a user-scoped generated ARDS/SDD structure when a user or account is onboarded in SST.
+trigger:
+  - user_created
+  - account_onboarded
+inputs:
+  - user_id
+  - account_id
+  - display_name
+  - project_name
+  - purpose
+  - storage_mode
+storage_modes:
+  logical:
+    description: Store generated file records and metadata without writing directories.
+  physical:
+    description: Materialize directories and files inside a controlled storage root.
+  hybrid:
+    description: Store metadata logically and materialize files for export or processing.
+minimum_layout:
+  - AGENTS.md
+  - docs/00-overview.md
+  - docs/adr/0001-adopt-ards-sdd.md
+  - specs/00-index.yaml
+  - specs/templates/feature.template.yaml
+  - specs/templates/state-scenario.template.yaml
+  - scripts/check.py
+  - .sst/workspace.yaml
+contract_rules:
+  - Internal ARDS/SDD templates and generated user workspaces must remain separate.
+  - Generated paths must be relative and scoped under a workspace root.
+  - Physical writes must use a controlled backend storage root.
+  - User downloadable bundles must contain generated files only.
+validation:
+  tests:
+    - Workspace ID is stable and scoped.
+    - Generated layout includes .sst/workspace.yaml.
+    - Invalid storage modes are rejected.
+    - Logical paths remain under the workspace root.

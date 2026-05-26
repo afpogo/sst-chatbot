@@ -1,0 +1,22 @@
+version: 1
+kind: poc
+id: poc-id
+status: draft
+title: POC title
+goal: What this POC proves.
+notebook: labs/notebooks/example.ipynb
+implementation:
+  reusable_module: null
+  tests: null
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+environment:
+  required:
+    - ENV_VAR_NAME
+promotion_criteria:
+  - Criterion 1
+discard_criteria:
+  - Criterion 1

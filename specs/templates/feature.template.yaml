@@ -1,0 +1,19 @@
+version: 1
+kind: feature
+id: feature-id
+status: draft
+title: Feature title
+goal: Short description of what this feature enables.
+context:
+  problem: Problem statement.
+  consumers:
+    - consumer-name
+requirements:
+  - Requirement 1
+acceptance_criteria:
+  - Criterion 1
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest
+risks:
+  - Risk 1

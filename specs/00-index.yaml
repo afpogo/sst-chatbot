@@ -1,0 +1,83 @@
+version: 1
+kind: ards_sdd_index
+repository: sst_chatbot
+description: Agent integration repository for SST and future applications.
+entries:
+  architecture:
+    - id: python-agentic-structure
+      path: specs/architecture/python-agentic-structure.yaml
+      status: accepted
+    - id: provider-model-memory-configuration
+      path: specs/architecture/provider-model-memory-configuration.yaml
+      status: accepted
+  capabilities:
+    - id: provider-abstraction
+      path: specs/capabilities/provider-abstraction.yaml
+      status: draft
+    - id: ards-structure-generation
+      path: specs/capabilities/ards-structure-generation.yaml
+      status: draft
+    - id: retrieval-augmented-generation
+      path: specs/capabilities/retrieval-augmented-generation.yaml
+      status: draft
+    - id: retriever-strategies
+      path: specs/capabilities/retriever-strategies.yaml
+      status: candidate
+    - id: user-workspace-provisioning
+      path: specs/capabilities/user-workspace-provisioning.yaml
+      status: candidate
+    - id: generated-workspace-governance
+      path: specs/capabilities/generated-workspace-governance.yaml
+      status: candidate
+    - id: agent-lifecycle-and-orchestrator-boundary
+      path: specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
+      status: draft
+    - id: user-activity-ards-memory
+      path: specs/capabilities/user-activity-ards-memory.yaml
+      status: draft
+    - id: application-context-connector
+      path: specs/capabilities/application-context-connector.yaml
+      status: draft
+    - id: plaud-transcript-derivations
+      path: specs/capabilities/plaud-transcript-derivations.yaml
+      status: draft
+    - id: prompt-catalog-and-versioning
+      path: specs/capabilities/prompt-catalog-and-versioning.yaml
+      status: draft
+  integrations:
+    - id: sst-agent-feed
+      path: specs/integrations/sst-agent-feed.yaml
+      status: draft
+    - id: plaud-sst-orchestrator-derivations
+      path: specs/integrations/plaud-sst-orchestrator-derivations.yaml
+      status: draft
+  pocs:
+    - id: langchain-lcel-poc
+      path: specs/pocs/langchain-lcel-poc.yaml
+      status: active
+    - id: runtime-validation-playground
+      path: specs/pocs/runtime-validation-playground.yaml
+      status: review
+    - id: ards-generation-agent-poc
+      path: specs/pocs/ards-generation-agent-poc.yaml
+      status: active
+    - id: langchain-chat-roles-poc
+      path: specs/pocs/langchain-chat-roles-poc.yaml
+      status: active
+    - id: langchain-rag-poc
+      path: specs/pocs/langchain-rag-poc.yaml
+      status: active
+    - id: agent-lifecycle-orchestrator-boundary-poc
+      path: specs/pocs/agent-lifecycle-orchestrator-boundary-poc.yaml
+      status: draft
+    - id: user-activity-ards-memory-poc
+      path: specs/pocs/user-activity-ards-memory-poc.yaml
+      status: draft
+    - id: application-context-connector-poc
+      path: specs/pocs/application-context-connector-poc.yaml
+      status: draft
+templates:
+  - path: specs/templates/feature.template.yaml
+  - path: specs/templates/poc.template.yaml
+  - path: specs/templates/state-scenario.template.yaml
+  - path: specs/templates/application-connector.template.yaml

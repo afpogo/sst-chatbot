@@ -1,0 +1,29 @@
+version: 1
+kind: poc
+id: langchain-lcel-poc
+status: active
+title: LangChain Runnable and LCEL proof of concept
+notebook: labs/notebooks/langchain_lcel_poc.ipynb
+implementation:
+  reusable_module: src/sst_chatbot/langchain_poc.py
+  tests: tests/test_langchain_poc.py
+goal: Validate Runnable, LCEL composition, batch execution, streaming, and structured output.
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+  openai:
+    default: false
+    requires_network: true
+    requires_paid_quota: true
+environment:
+  required_for_openai:
+    - OPENAI_API_KEY
+    - LANGCHAIN_API_KEY
+promotion_criteria:
+  - Extract provider-independent contracts into dedicated modules.
+  - Keep mock tests passing without provider credentials.
+  - Document which behavior is LangChain-specific and which is repo-owned.
+discard_criteria:
+  - If LangChain is not chosen as an orchestration layer, retain only lessons learned and remove notebook dependencies.

@@ -1,0 +1,27 @@
+version: 1
+kind: poc
+id: ards-generation-agent-poc
+status: active
+title: ARDS/SDD generation agent POC
+goal: Prove that an AI-assisted workflow can create predefined ARDS/SDD structures through a safe deterministic backend generator.
+implementation:
+  reusable_module: src/sst_chatbot/ards_generator.py
+  tests: tests/test_ards_generator.py
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+future_chain:
+  orchestration: LangChain LCEL
+  expected_flow:
+    - PromptTemplate
+    - provider model
+    - structured output parser
+    - ARDS bundle generator
+promotion_criteria:
+  - Add a structured request schema for frontend input.
+  - Add a backend endpoint or service wrapper.
+  - Add UI download integration in the consuming web app.
+discard_criteria:
+  - If ARDS bundles are generated exclusively from static templates without agent involvement.

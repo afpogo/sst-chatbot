@@ -1,0 +1,21 @@
+version: 1
+kind: state_scenario
+state_id: state-id
+status: draft
+title: State scenario title
+execution_mode: parallel
+depends_on: []
+inputs:
+  human: []
+  agent: []
+  script_event: []
+workflow:
+  - step: describe-step
+    owner: agent
+transitions:
+  ready:
+    when: Preconditions are satisfied.
+  blocked:
+    when: Required input or dependency is missing.
+  done:
+    when: Acceptance criteria pass.

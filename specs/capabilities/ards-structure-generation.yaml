@@ -1,0 +1,41 @@
+version: 1
+kind: capability
+id: ards-structure-generation
+status: draft
+title: ARDS/SDD structure generation
+goal: Generate predefined ARDS/SDD repository structures from user requests through a safe backend-controlled flow.
+user_flow:
+  - User describes the desired ARDS/SDD structure in a frontend.
+  - Backend invokes an agent chain to interpret the request.
+  - Agent returns structured generation intent, not arbitrary filesystem writes.
+  - Backend validates and materializes a bundle.
+  - Frontend exposes a download button for the generated ZIP.
+required_outputs:
+  - AGENTS.md
+  - docs/00-overview.md
+  - docs/adr/0001-adopt-ards-sdd.md
+  - specs/00-index.yaml
+  - specs/templates/feature.template.yaml
+  - scripts/check.py
+safety_rules:
+  - Reject absolute paths.
+  - Reject path traversal with ..
+  - Reject provider-generated raw write commands.
+  - Generate files from validated templates or validated manifests only.
+  - Keep generated artifacts in memory or controlled temporary storage.
+execution_model:
+  ai_assisted:
+    - interpret user intent
+    - fill structured fields
+    - draft human-readable text
+  deterministic:
+    - validate paths
+    - create files
+    - create zip archive
+    - run structural checks
+validation:
+  tests:
+    - Generated bundle includes required files.
+    - ZIP export contains only safe relative paths.
+    - Unsafe paths are rejected.
+    - Feature works without external provider calls.

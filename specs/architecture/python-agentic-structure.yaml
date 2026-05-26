@@ -1,0 +1,41 @@
+version: 1
+kind: architecture
+id: python-agentic-structure
+status: accepted
+title: Python agentic project structure
+decision_date: 2026-05-24
+summary: Establish src/app as the primary maintainable Python application package and labs as the experimental notebook workspace.
+source_paths:
+  application:
+    - src/app
+  existing_reusable_modules:
+    - src/sst_chatbot
+  labs:
+    - labs/notebooks
+    - labs/experiments
+  documentation:
+    - docs
+  contracts:
+    - specs
+dependencies:
+  runtime:
+    - langchain
+    - langgraph
+    - langsmith
+    - langchain-openai
+    - openai
+    - python-dotenv
+    - pydantic
+  validation:
+    - pytest
+    - PyYAML
+rules:
+  - Keep business logic out of the base structure.
+  - Keep provider SDK usage behind repo-owned boundaries.
+  - Keep notebooks and exploratory scripts under labs.
+  - Keep ARDS/SDD decisions documented under docs and specs.
+validation:
+  commands:
+    - .\\.venv\\Scripts\\python.exe -m pytest
+    - .\\.venv\\Scripts\\python.exe scripts\\ards_check.py
+    - .\\.venv\\Scripts\\python.exe scripts\\check.py

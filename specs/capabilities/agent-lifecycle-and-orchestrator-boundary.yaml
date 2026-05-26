@@ -1,0 +1,89 @@
+version: 1
+kind: capability
+id: agent-lifecycle-and-orchestrator-boundary
+status: draft
+title: Agent lifecycle and orchestrator boundary
+goal: Define how SST events can trigger agent-guided workflows that produce validated operation intents for handoff to the 4uentes-orchestor repository.
+ownership:
+  this_repository:
+    - agent creation contracts
+    - agent lifecycle states
+    - provider-agnostic planning behavior
+    - structured operation intent schemas
+    - fake orchestrator client for POCs and tests
+  4uentes_orchestor:
+    - server orchestration
+    - durable operation queues
+    - production workers
+    - runtime scheduling policy
+    - infrastructure adapters
+    - server-side audit records
+consumers:
+  - SST application backend
+  - future agent creation repository workflows
+  - generated ARDS/SDD workspace services
+  - 4uentes-orchestor handoff API
+baseline_inputs:
+  - SST application event
+  - user request
+  - account or tenant scope
+  - optional workspace context
+  - optional retrieval context
+agent_lifecycle:
+  required: true
+  candidate_states:
+    - requested
+    - classified
+    - planned
+    - validated_for_handoff
+    - handoff_requested
+    - handoff_accepted
+    - completed
+    - failed
+    - rejected
+operation_intent:
+  required: true
+  rules:
+    - Agents must return structured operation intent, not executable shell commands.
+    - Local validators must approve intent shape before a handoff can be requested.
+    - 4uentes-orchestor decides whether the operation can be queued or executed.
+    - Every operation must include account or tenant scope.
+    - Every handoff must include an idempotency key and correlation id.
+  initial_types:
+    - workspace.generate_bundle
+    - workspace.apply_patch
+    - user_history.propose_update
+    - ui_customization.enqueue_change
+    - server.refresh_cache
+    - server.restart_service
+handoff_payload:
+  required: true
+  fields:
+    - operation_intent_id
+    - capability_id
+    - tenant_id
+    - user_id
+    - payload
+    - priority
+    - preferred_execution_window
+    - requested_retry_policy
+    - idempotency_key
+    - correlation_id
+    - audit_metadata
+offline_execution:
+  required: false
+  description: Scheduling hint for work that should run during low-traffic windows. Final scheduling policy belongs to 4uentes-orchestor.
+contract_rules:
+  - Provider SDKs must stay behind provider adapters.
+  - Production server credentials must not live in this repository.
+  - Unit tests must use a fake orchestrator client and must not mutate real servers.
+  - POCs must remain under pocs/ and specs/pocs/ until promotion criteria are met.
+  - Agent output must not directly mutate user history, UI files, workspaces, or servers.
+  - This repository may request server work only through the 4uentes-orchestor handoff boundary.
+validation:
+  tests:
+    - Unknown operation types are rejected.
+    - Invalid agent lifecycle transitions are rejected.
+    - Approved intents can produce handoff payloads with idempotency keys and correlation ids.
+    - Fake orchestrator client records accepted and rejected handoffs.
+    - Server orchestration POCs do not require network or production credentials.

@@ -1,0 +1,72 @@
+version: 1
+kind: capability
+id: plaud-transcript-derivations
+status: draft
+title: Plaud transcript derivations
+goal: Generate provider-agnostic translations, summaries, and governed ARDS memory candidates from Plaud transcripts persisted by SST.
+inputs:
+  - document_derivation.requested
+  - plaud_transcript_payload
+  - requested_output_policy
+outputs:
+  - translation_document_result
+  - summary_document_result
+  - memory_candidate_records
+supported_derivations:
+  translation:
+    description: Translate transcript content into a requested target language.
+    output_owner: sst-bend
+    persistence_target: article_documents
+  summary:
+    description: Produce a normalized summary from transcript evidence.
+    output_owner: sst-bend
+    persistence_target: article_documents
+  memory_candidates:
+    description: Produce governed ARDS memory candidates with tags and provenance.
+    output_owner: sst_chatbot
+    persistence_target: internal_ards_memory
+constraints:
+  - Production Plaud sync is owned by sst-bend.
+  - Cross-repo execution is owned by 4uentes-orchestor.
+  - Provider SDKs stay behind this repository provider adapters.
+  - Unit tests must use mocked providers and fake orchestrator/SST requests.
+  - Agent output must not directly write files or mutate external databases.
+  - Memory candidates must not be promoted to generated ARDS/SDD artifacts without lifecycle approval.
+minimum_agent_contract:
+  request_fields:
+    - request_id
+    - account_id
+    - article_id
+    - transcript
+    - requested_outputs
+    - policy
+  response_fields:
+    - request_id
+    - status
+    - outputs
+    - validation
+    - provenance
+provenance_required:
+  - source_provider
+  - source_provider_ref_id
+  - source_article_id
+  - generated_by
+  - provider
+  - model
+  - prompt_version
+governance_rules:
+  - Raw transcript is evidence, not a generated workspace file.
+  - Translation and summary are user-visible document derivations only after SST persistence.
+  - ARDS memory candidates require tags, visibility, lifecycle status, and provenance.
+  - Corrections create new records or lifecycle transitions, not silent overwrites.
+validation:
+  tests:
+    - Translation result has target language and provenance.
+    - Summary result has source article id and provenance.
+    - Memory candidate result has tags, visibility, lifecycle status, and provenance.
+    - Unknown derivation type is rejected.
+    - Provider-specific fields do not leak into the public agent contract.
+related_integration:
+  - specs/integrations/plaud-sst-orchestrator-derivations.yaml
+related_docs:
+  - docs/architecture/plaud-sst-orchestrator-agent-derivations.md

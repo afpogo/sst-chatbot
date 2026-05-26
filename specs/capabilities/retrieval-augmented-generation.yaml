@@ -1,0 +1,47 @@
+version: 1
+kind: capability
+id: retrieval-augmented-generation
+status: draft
+title: Retrieval augmented generation for SST agents
+goal: Add private, recent, and workspace-scoped SST context to agent responses without coupling SST to a provider or vector database.
+layers:
+  ingestion:
+    description: Load private SST sources into normalized documents.
+    required_metadata:
+      - source_id
+      - title
+      - document_type
+      - workspace_id
+  indexing:
+    description: Split documents into chunks that preserve source metadata.
+  retrieval:
+    description: Retrieve relevant chunks through a retriever contract after applying workspace and permission filters.
+  generation:
+    description: Inject retrieved context into a prompt and generate an answer with sources.
+retriever_strategies:
+  - similarity
+  - similarity_score_threshold
+  - mmr
+  - future_hybrid
+contract_rules:
+  - SST must not call LangChain or provider SDKs directly.
+  - SST should depend on a retriever contract, not a vector store implementation.
+  - Retrieval must filter by workspace or account before ranking.
+  - Answers grounded in private documents should include sources.
+  - Unit tests must run without external provider calls.
+  - Internal ARDS/SDD knowledge and generated user artifacts must remain separated by metadata and ownership.
+future_adapters:
+  embeddings:
+    - openai
+    - anthropic_or_other_provider
+    - local_model
+  vector_stores:
+    - in_memory_for_tests
+    - postgres_pgvector
+    - dedicated_vector_database
+validation:
+  tests:
+    - Documents preserve metadata.
+    - Splitting creates bounded chunks.
+    - Retrieval filters by workspace.
+    - Chain answers from retrieved context.

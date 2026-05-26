@@ -1,0 +1,88 @@
+version: 1
+kind: architecture
+id: provider-model-memory-configuration
+status: accepted
+title: Provider, model, and memory configuration
+decision_date: 2026-05-24
+intent: Enable future agents to swap providers, models, and memory strategies through parameters.
+source_docs:
+  openai_models: https://developers.openai.com/api/docs/models
+  openai_latest_model: https://developers.openai.com/api/docs/guides/latest-model
+  openai_conversation_state: https://developers.openai.com/api/docs/guides/conversation-state
+  openai_prompt_caching: https://developers.openai.com/api/docs/guides/prompt-caching
+code:
+  contracts:
+    - src/app/providers/types.py
+  registry:
+    - src/app/providers/model_registry.py
+  adapters:
+    - src/app/providers/openai_provider.py
+    - src/app/providers/anthropic_provider.py
+    - src/app/providers/github_copilot_provider.py
+  factory:
+    - src/app/providers/factory.py
+  settings:
+    - src/app/config/settings.py
+configuration:
+  provider:
+    env: LLM_PROVIDER
+    supported_values:
+      - openai
+      - anthropic
+      - github_copilot
+      - deepseek
+      - local
+  model:
+    env: LLM_MODEL
+    default: gpt-5.4-mini
+  memory:
+    backend_env: MEMORY_BACKEND
+    strategy_env: MEMORY_STRATEGY
+    supported_backends:
+      - none
+      - local
+      - langgraph_checkpoint
+      - openai_responses
+      - openai_conversations
+      - vector_store
+    supported_strategies:
+      - stateless
+      - window
+      - summary
+      - retrieval
+      - previous_response
+      - conversation
+openai_parameters:
+  reasoning_effort:
+    env: LLM_REASONING_EFFORT
+    values:
+      - none
+      - low
+      - medium
+      - high
+      - xhigh
+  text_verbosity:
+    env: LLM_TEXT_VERBOSITY
+    values:
+      - low
+      - medium
+      - high
+  prompt_cache_retention:
+    env: OPENAI_PROMPT_CACHE_RETENTION
+    values:
+      - auto
+      - in_memory
+      - 24h
+rules:
+  - Do not instantiate provider SDKs that are not declared dependencies.
+  - Do not make external provider calls in unit tests.
+  - Keep model capability assumptions in the registry, not in agent business logic.
+  - Keep provider memory state explicit through environment configuration.
+validation:
+  tests:
+    - tests/test_settings.py
+    - tests/test_provider_configuration.py
+  commands:
+    - .\\.venv\\Scripts\\python.exe -m pytest
+    - .\\.venv\\Scripts\\python.exe scripts\\ards_check.py
+    - .\\.venv\\Scripts\\python.exe scripts\\check.py

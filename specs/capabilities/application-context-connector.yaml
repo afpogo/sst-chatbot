@@ -1,0 +1,57 @@
+version: 1
+kind: capability
+id: application-context-connector
+status: draft
+title: Application context connector
+goal: Provide an application-agnostic way for robots and agents to understand the domains, events, permissions, and context sources of the application where they reside.
+connector_modes:
+  runtime:
+    description: The application emits normalized events and exposes context through API, webhooks, or message channels.
+  file:
+    description: The application ships a descriptor file that can be read by this repository or copied into another project.
+event_envelope:
+  format: CloudEvents-compatible
+  required_fields:
+    - id
+    - source
+    - type
+    - subject
+    - time
+    - datacontenttype
+    - dataschema
+    - data
+connector_descriptor:
+  required_fields:
+    - application_id
+    - application_name
+    - domains
+    - event_types
+    - entity_types
+    - robot_scopes
+    - memory_tag_mapping
+    - retrieval_scope_rules
+    - supported_intents
+    - blocked_intents
+sst_initial_domains:
+  - articles
+  - dictionary
+  - bitacoras
+  - robots
+robot_scope_rules:
+  - Robots must be scoped to account or tenant.
+  - Robots must be scoped to one application context before using memory.
+  - Robots may read only visible and indexable memory for their scope.
+  - Robots may emit only intents allowed by their role and lifecycle status.
+fallback_file:
+  template: specs/templates/application-connector.template.yaml
+  use_when:
+    - The consuming app cannot expose runtime events yet.
+    - A future project needs to document its app context before integration.
+    - A POC needs deterministic local context without network calls.
+validation:
+  tests:
+    - Connector descriptors declare at least one domain and event type.
+    - Unknown domains are rejected unless explicitly declared by the connector.
+    - Runtime and file connector modes normalize into the same event shape.
+    - Robot scope filters are applied before retrieval.
+    - Blocked intents cannot be emitted from connector-derived context.

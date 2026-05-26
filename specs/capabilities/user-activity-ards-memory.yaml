@@ -1,0 +1,79 @@
+version: 1
+kind: capability
+id: user-activity-ards-memory
+status: draft
+title: User activity ARDS memory
+goal: Convert relevant SST conversations, decisions, comments, and application events into governed internal ARDS memory records.
+inputs:
+  - normalized_activity_event
+  - chatbot_message
+  - application_context_connector
+  - repo_discovery_handoff
+outputs:
+  - memory_record
+  - optional_user_history_update_intent
+  - optional_workspace_generation_intent
+storage_layers:
+  activity_event_log:
+    description: Raw or normalized source events. Used as evidence and audit input.
+  internal_ards_memory:
+    description: Tagged, governed, provenance-aware memory records.
+  generated_ards_sdd_workspace:
+    description: Curated user or project artifacts derived from approved memory.
+memory_record:
+  required_fields:
+    - memory_id
+    - source_event_id
+    - account_id
+    - application_id
+    - actor
+    - entity
+    - activity
+    - tags
+    - visibility
+    - lifecycle_status
+    - provenance
+    - body
+    - body_hash
+    - created_at
+  tag_groups:
+    - domain
+    - kind
+    - scope
+    - visibility
+    - status
+    - source
+provenance:
+  concepts:
+    agent: User, robot, chatbot agent, backend service, or orchestrator job.
+    activity: Capture, classify, approve, revise, generate, or invalidate.
+    entity: Comment, decision, evidence, gap, task, spec, ADR, or bundle.
+  relations:
+    - was_derived_from
+    - was_attributed_to
+    - was_revision_of
+    - was_invalidated_by
+governance_rules:
+  - Raw chat must not automatically become workspace files.
+  - Tags must be structured attributes.
+  - Memory must declare whether it is indexable, downloadable, and user visible.
+  - Retrieval must filter by account, application, domain, and permission scope.
+  - Corrections should create a new memory record or lifecycle transition.
+  - Generated ARDS/SDD artifacts must reference source memory records.
+robots_context:
+  discovery_source: CR-SST-0006
+  current_state: runtime-partial
+  safe_intents:
+    - user_history.propose_update
+    - workspace.generate_bundle
+  blocked_intents:
+    - workspace.apply_patch
+    - server.restart_service
+    - server.refresh_cache
+validation:
+  tests:
+    - Memory records require tags and provenance.
+    - Invalid visibility combinations are rejected.
+    - Robots discovery creates evidence and gap records, not server intents.
+    - Retrieval candidates are filtered by account and application scope.
+    - Workspace generation can cite source memory records.

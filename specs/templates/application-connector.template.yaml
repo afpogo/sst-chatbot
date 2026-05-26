@@ -1,0 +1,45 @@
+version: 1
+kind: application_context_connector
+id: application-id
+status: draft
+application:
+  id: application-id
+  name: Application name
+  owner: owning-team
+connector_mode: file
+domains:
+  - id: domain-id
+    title: Domain title
+    entity_types:
+      - entity-type
+event_types:
+  - type: com.example.domain.entity.created
+    domain: domain-id
+    entity_type: entity-type
+    description: Event description.
+    dataschema: specs/schemas/domain/entity-created.schema.yaml
+memory_tag_mapping:
+  domain:
+    from: event.domain
+  kind:
+    default: evidence
+  scope:
+    default: application
+  source:
+    default: application_event
+robot_scopes:
+  - role: robot-role
+    domains:
+      - domain-id
+    allowed_intents:
+      - user_history.propose_update
+    blocked_intents:
+      - server.restart_service
+retrieval_scope_rules:
+  - Filter by account_id before ranking.
+  - Filter by application_id before ranking.
+  - Include only memory records marked indexable.
+  - Exclude archived and discarded memory by default.
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe scripts\ards_check.py

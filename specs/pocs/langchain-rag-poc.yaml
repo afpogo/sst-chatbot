@@ -1,0 +1,38 @@
+version: 1
+kind: poc
+id: langchain-rag-poc
+status: active
+title: LangChain RAG proof of concept
+notebook: labs/notebooks/langchain_rag_poc.ipynb
+implementation:
+  reusable_module: src/sst_chatbot/rag_poc.py
+  tests: tests/test_rag_poc.py
+goal: Replicate the course RAG flow with SST-oriented documents, chunking, retrieval, context injection, and LCEL answer generation.
+architecture_layers:
+  ingestion:
+    - SourceDocument
+    - load_source_documents
+  indexing:
+    - split_documents
+  retrieval:
+    - retrieve_relevant_documents
+    - format_context
+  generation:
+    - build_rag_prompt
+    - build_rag_chain
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+  openai:
+    default: false
+    requires_network: true
+    requires_paid_quota: true
+promotion_criteria:
+  - Add a provider-agnostic embedding interface.
+  - Add a vector store adapter with workspace filtering.
+  - Keep mock tests passing without provider credentials.
+  - Define the SST API boundary for RAG responses.
+discard_criteria:
+  - If SST does not need private document retrieval in agent workflows.

@@ -1,0 +1,23 @@
+version: 1
+kind: poc
+id: runtime-validation-playground
+status: review
+title: Runtime validation playground
+notebook: labs/notebooks/runtime_validation_playground.ipynb
+goal: Preserve the earlier notebook used to validate environment variables, imports, and init.py execution.
+providers:
+  openai:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+environment:
+  required:
+    - OPENAI_API_KEY
+    - LANGCHAIN_API_KEY
+review_notes:
+  - This notebook overlaps with init.py and the LangChain LCEL POC.
+  - It should either be simplified into documentation or removed after confirming it has no unique value.
+promotion_criteria:
+  - None. This notebook is not expected to become reusable source code.
+discard_criteria:
+  - init.py and tests cover the same validation path.

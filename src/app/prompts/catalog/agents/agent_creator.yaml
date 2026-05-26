@@ -1,0 +1,46 @@
+id: agent.creator
+version: "1"
+status: draft
+description: Prompt for creating an agent creation intent from a user request.
+trace_policy: metadata_only
+visibility: internal_private
+provider_cache_policy: none
+compatible_providers:
+  - openai
+  - anthropic
+  - deepseek
+  - local
+compatible_models:
+  - any
+tags:
+  - agents
+  - creation
+variables:
+  - name: user_request
+    type: string
+    required: true
+    sensitive: true
+    description: Original user request.
+  - name: capability_id
+    type: string
+    required: true
+    sensitive: false
+    description: Capability selected by deterministic classification.
+  - name: agent_name
+    type: string
+    required: false
+    default: SST Agent
+    sensitive: false
+    description: Candidate agent display name.
+messages:
+  - role: system
+    template: |
+      You create structured agent specifications for SST.
+      Return only validated intent data requested by the caller.
+      Do not create files, execute tools, or call providers directly.
+  - role: human
+    template: |
+      Agent name: {agent_name}
+      Capability: {capability_id}
+      User request:
+      {user_request}

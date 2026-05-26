@@ -1,0 +1,41 @@
+version: 1
+kind: poc
+id: langchain-chat-roles-poc
+status: active
+title: LangChain chat roles proof of concept
+notebook: labs/notebooks/langchain_chat_roles_poc.ipynb
+implementation:
+  reusable_module: src/sst_chatbot/langchain_chat_roles.py
+  tests: tests/test_langchain_chat_roles.py
+goal: Validate chat role handling with system, user, and assistant messages through a scalable LCEL chain.
+architecture_layers:
+  data:
+    - AssistantProfile
+    - ChatRoleExample
+    - ChatRoleRequest
+  chain:
+    - ChatPromptTemplate
+    - MessagesPlaceholder
+    - chat model
+    - StrOutputParser
+  execution:
+    - notebook invoke
+    - notebook batch
+    - notebook stream
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+  openai:
+    default: false
+    requires_network: true
+    requires_paid_quota: true
+environment:
+  required_for_openai:
+    - OPENAI_API_KEY
+    - LANGCHAIN_API_KEY
+promotion_criteria:
+  - Extract shared chat message contracts if more agent POCs need role-aware conversations.
+  - Keep mock tests passing without provider credentials.
+  - Document how role messages map to SST agent behavior.

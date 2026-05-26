@@ -1,0 +1,24 @@
+version: 1
+kind: integration
+id: sst-agent-feed
+status: draft
+title: SST agent feed integration
+goal: Define how this repository should provide agent capabilities to SST without coupling SST to a provider SDK.
+consumers:
+  - SST application
+  - future applications
+inputs:
+  - user message or task context
+  - optional account or workspace context
+  - optional tool or retrieval context
+outputs:
+  - normalized assistant response
+  - optional structured payload
+  - optional trace metadata
+non_goals:
+  - SST should not depend directly on OpenAI, Anthropic, Deepseek, or any specific provider SDK.
+  - Unit tests should not call external AI services.
+open_questions:
+  - Which SST runtime boundary will consume these agents first?
+  - Should the first integration be HTTP, package import, queue event, or another mechanism?
+  - Which structured response schemas does SST need first?

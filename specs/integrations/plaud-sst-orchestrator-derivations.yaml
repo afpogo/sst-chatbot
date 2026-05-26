@@ -1,0 +1,139 @@
+version: 1
+kind: integration
+id: plaud-sst-orchestrator-derivations
+status: draft
+title: Plaud transcript derivations through SST, orchestrator, and chatbot agents
+goal: Define the cross-repo handoff for Plaud transcript-derived translations, summaries, and ARDS memory candidates without coupling SST directly to provider SDKs or chatbot internals.
+participants:
+  producer:
+    repo: sst-bend
+    responsibilities:
+      - Plaud webhook and sync.
+      - Canonical transcript persistence as article payload.
+      - Article document state and final document content persistence.
+      - Emitting derivation requests after source persistence.
+  orchestrator:
+    repo: 4uentes-orchestor
+    responsibilities:
+      - Cross-repo job ownership.
+      - Scheduling, retries, idempotency, and execution audit.
+      - Calling sst_chatbot through a validated agent boundary.
+      - Returning accepted results or normalized failures to SST.
+  agent_runtime:
+    repo: sst_chatbot
+    responsibilities:
+      - Provider-agnostic agent invocation.
+      - Translation, summary, and memory-candidate structured outputs.
+      - Prompt/version metadata.
+      - Local validation with mocked providers in tests.
+source_systems:
+  - id: plaud
+    role: transcript_source
+    access_notes:
+      - Production Plaud sync and webhook credentials are owned by sst-bend.
+      - Plaud MCP may be used for exploration or POCs, not as the first production sync path.
+input_event:
+  type: document_derivation.requested
+  owner: sst-bend
+  required_fields:
+    - request_id
+    - account_id
+    - article_id
+    - source_provider
+    - source_provider_ref_id
+    - source_payload_ref
+    - requested_outputs
+    - idempotency_key
+    - created_at
+  requested_outputs:
+    allowed_values:
+      - translation
+      - summary
+      - memory_candidates
+agent_request:
+  required_fields:
+    - request_id
+    - account_id
+    - article_id
+    - transcript
+    - requested_outputs
+    - policy
+    - trace
+  transcript:
+    required_fields:
+      - provider
+      - provider_ref_id
+      - language
+    optional_fields:
+      - title
+      - summary_short
+      - segments
+      - notes
+      - metadata
+  policy:
+    required_fields:
+      - allowed_output_types
+      - target_languages
+      - retention_class
+      - visibility
+agent_response:
+  required_fields:
+    - request_id
+    - status
+    - outputs
+    - validation
+    - provenance
+  statuses:
+    - ready
+    - rejected
+    - failed
+  outputs:
+    allowed_types:
+      - translation
+      - summary
+      - memory_candidates
+  provenance:
+    required_fields:
+      - generated_by
+      - provider
+      - model
+      - prompt_version
+      - source_article_id
+      - source_provider_ref_id
+orchestrator_events:
+  - type: document_derivation.accepted
+    emitted_by: 4uentes-orchestor
+  - type: document_derivation.completed
+    emitted_by: 4uentes-orchestor
+  - type: document_derivation.failed
+    emitted_by: 4uentes-orchestor
+rules:
+  - sst-bend must persist the Plaud transcript before requesting derivations.
+  - sst-bend must not block Plaud ingestion on agent derivation completion.
+  - sst_chatbot must not store Plaud credentials or mutate SST data stores.
+  - 4uentes-orchestor owns retries and cross-repo execution audit.
+  - Agent outputs must be validated as structured data before being returned to SST.
+  - Raw transcripts must not automatically become generated ARDS/SDD files.
+  - Memory candidates must remain separate from user-visible article documents.
+failure_handling:
+  plaud_sync_success_agent_failed: Transcript remains available in SST and document derivation is marked failed or retryable.
+  chatbot_unavailable: Orchestrator retries or records normalized failure.
+  invalid_agent_output: Orchestrator rejects the result before SST persistence.
+  sst_persist_failed: SST owns document state retry or failure marking.
+validation:
+  expected_tests:
+    - Fake SST request can be transformed into an agent request.
+    - Mock agent response validates for translation output.
+    - Mock agent response validates for summary output.
+    - Memory candidates require governance tags and provenance.
+    - Invalid output type is rejected.
+    - Missing idempotency key is rejected before handoff.
+related_docs:
+  - docs/architecture/plaud-sst-orchestrator-agent-derivations.md
+  - docs/architecture/agent-core-and-orchestrator-boundary.md
+  - docs/architecture/user-activity-ards-memory.md
+  - docs/architecture/application-context-connectors.md
+related_specs:
+  - specs/integrations/sst-agent-feed.yaml
+  - specs/capabilities/user-activity-ards-memory.yaml
+  - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml

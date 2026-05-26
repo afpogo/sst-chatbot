@@ -1,0 +1,37 @@
+version: 1
+kind: poc
+id: user-activity-ards-memory-poc
+status: draft
+title: User activity ARDS memory POC
+goal: Prove that chat messages, app events, and Robots discovery handoffs can become governed ARDS memory records and safe generation intents.
+notebook: labs/notebooks/user_activity_ards_memory_poc.ipynb
+implementation:
+  reusable_module: null
+  tests: null
+providers:
+  mock:
+    default: true
+    requires_network: false
+    requires_paid_quota: false
+environment:
+  required: []
+scope:
+  included:
+    - mock chat message capture
+    - mock Articles, Dictionary, Bitacoras, and Robots events
+    - tag classification
+    - provenance metadata
+    - robots runtime-partial memory classification
+    - safe intent selection
+  excluded:
+    - real SST database writes
+    - real server operations
+    - production event brokers
+    - live provider calls
+promotion_criteria:
+  - Add tests for memory record validation.
+  - Add tests for tag and visibility governance.
+  - Add tests that Robots discovery does not produce server intents.
+  - Add a deterministic path from approved memory to ARDS/SDD bundle generation.
+discard_criteria:
+  - If SST decides to keep user activity only as raw chat logs without ARDS memory.

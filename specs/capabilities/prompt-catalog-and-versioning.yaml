@@ -1,0 +1,75 @@
+version: 1
+kind: capability
+id: prompt-catalog-and-versioning
+status: draft
+title: Private prompt catalog and versioning
+goal: Keep SST chatbot prompts private, versioned, validated, and easy to render for agents.
+ownership:
+  this_repository:
+    - prompt contracts
+    - prompt catalog
+    - prompt validation
+    - prompt rendering
+    - prompt trace metadata
+  external_services:
+    - model execution
+    - optional metadata-only observability
+storage:
+  v1:
+    backend: repo_yaml
+    path: src/app/prompts/catalog
+    discovery: explicit_registry_allowlist
+  future:
+    backend: private_prompt_registry_service
+    requirements:
+      - approval workflow
+      - rollback
+      - access control
+      - audit log
+      - evaluation gates
+contract:
+  required_fields:
+    - id
+    - version
+    - status
+    - description
+    - messages
+    - variables
+    - visibility
+    - trace_policy
+    - provider_cache_policy
+    - compatible_providers
+    - compatible_models
+  allowed_roles:
+    - system
+    - human
+    - assistant
+  trace_policy:
+    default: metadata_only
+    allowed:
+      - metadata_only
+  visibility:
+    default: internal_private
+    allowed:
+      - internal_private
+  provider_cache_policy:
+    default: none
+    allowed:
+      - none
+      - in_memory
+      - 24h
+rules:
+  - LangSmith is not the source of prompts.
+  - Prompt bodies must not be intentionally added to trace metadata.
+  - Internal private prompts default to no provider prompt-cache retention.
+  - Provider adapters receive rendered messages, not YAML.
+  - Prompts must declare all variables used by templates.
+  - Render input must not include undeclared variables.
+  - Prompt files are behavior changes and require tests.
+validation:
+  tests:
+    - tests/test_prompt_engine.py
+  commands:
+    - .\\.venv\\Scripts\\python.exe -m pytest
+    - .\\.venv\\Scripts\\python.exe scripts\\ards_check.py
+    - .\\.venv\\Scripts\\python.exe scripts\\check.py
