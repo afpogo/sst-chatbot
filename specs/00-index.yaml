@@ -10,6 +10,9 @@ entries:
     - id: provider-model-memory-configuration
       path: specs/architecture/provider-model-memory-configuration.yaml
       status: accepted
+    - id: agent-runtime-product-intent
+      path: specs/architecture/agent-runtime-product-intent.yaml
+      status: draft
   capabilities:
     - id: provider-abstraction
       path: specs/capabilities/provider-abstraction.yaml

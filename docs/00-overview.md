@@ -14,6 +14,23 @@ The repo must remain provider-agnostic. OpenAI, Anthropic, Deepseek, local model
 - OpenAI is currently the first real provider experiment.
 - ARDS/SDD documentation under `docs/` and structured contracts under `specs/`.
 - Plaud transcript derivations are documented as an asynchronous cross-repo handoff through `4uentes-orchestor`, with production Plaud ingestion staying in `sst-bend`.
+- Model and subagent selection policy lives in `docs/playbooks/model-selection-policy.md`.
+
+## Product Intent
+This repository is intended to become the governed agent runtime core for SST, not only a chatbot or LangChain experimentation area.
+
+The product direction is documented in `docs/architecture/agent-runtime-product-intent.md` and `specs/architecture/agent-runtime-product-intent.yaml`.
+
+The core business workflow is:
+
+```text
+operational context
+  -> governed memory
+  -> private versioned prompts
+  -> provider-agnostic model execution
+  -> structured validated intent
+  -> ARDS/SDD memory, workspace proposal, or orchestrator handoff
+```
 
 ## ARDS/SDD Structure
 - `AGENTS.md`: operational guide for humans and AI agents working in this repo.
@@ -37,6 +54,7 @@ The repo must remain provider-agnostic. OpenAI, Anthropic, Deepseek, local model
 - Integration contract: `specs/integrations/plaud-sst-orchestrator-derivations.yaml`
 - Agent capability: `specs/capabilities/plaud-transcript-derivations.yaml`
 - Operational note: `docs/tasks/2026-05-24-plaud-sst-orchestrator-handoff.md`
+- Model selection annex: `docs/playbooks/model-selection-policy.md`
 
 ## Out Of Scope
 - Business logic.

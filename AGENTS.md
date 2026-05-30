@@ -5,6 +5,8 @@ This repository is the AI agent experimentation and integration base for SST and
 
 The long-term design is provider-agnostic: OpenAI, Anthropic, Deepseek, local models, or future providers should be replaceable behind repo-owned contracts.
 
+The product intent is to evolve this repository into a governed agent runtime core for SST: operational context becomes governed memory, private prompts, provider-agnostic model calls, structured validated intents, and orchestrator handoffs.
+
 ## ARDS/SDD Operating Model
 - `AGENTS.md`: operational guide for humans and AI agents.
 - `docs/`: human-readable context, architecture, ADRs, POC policy, and task notes.
@@ -30,6 +32,7 @@ The long-term design is provider-agnostic: OpenAI, Anthropic, Deepseek, local mo
 - `tests/`: pytest suite using mocks/fakes for external provider behavior.
 - `.env` and `jupyter_settings.py`: local-only configuration. Do not commit secrets.
 - `.env.example`: committed placeholder environment file.
+- `docs/architecture/agent-runtime-product-intent.md`: business and product direction for the governed agent runtime.
 
 ## Build, Test, And Development Commands
 Use the project virtual environment instead of the system Python.
@@ -58,6 +61,26 @@ Notes:
 - Prefer small functions with clear side effects around API calls, environment loading, and provider selection.
 - Keep internal ARDS/SDD knowledge separate from generated user ARDS/SDD workspaces.
 - Do not let agent output become files directly; use structured intent plus deterministic backend validation.
+
+## Model and Subagent Selection Annex
+This repo has an operational annex for model and subagent selection:
+
+- `docs/playbooks/model-selection-policy.md`
+
+Before planning or executing a task, agents must classify it as:
+
+- `short-defined-task`
+- `long-context-task`
+- `complex-high-risk-task`
+
+Then apply the policy defined in the ARDS/SDD annex. This rule complements the
+existing ARDS/SDD; it does not replace working agreements, specs, docs,
+playbooks, capabilities, handoffs, or current repository decisions.
+
+For planned work, the classification must produce an auditable `task_weight`,
+`model_selection`, and `subagent_deployment_plan` decision. If the policy
+requires subagents and the runtime cannot spawn them, record the fallback in the
+plan or evidence before continuing.
 
 ## POC Rules
 - Put notebooks under `labs/notebooks/`.

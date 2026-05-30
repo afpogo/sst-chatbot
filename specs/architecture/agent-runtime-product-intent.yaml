@@ -1,0 +1,87 @@
+version: 1
+kind: architecture
+id: agent-runtime-product-intent
+status: draft
+title: Agent runtime product intent
+decision_date: 2026-05-25
+purpose: Define the business and product direction for the SST chatbot repository as a governed agent runtime core.
+business_thesis: SST needs governed agents that convert operational context into structured memory, safe intents, and orchestrator handoffs.
+repository_role:
+  owns:
+    - application context normalization
+    - governed memory contracts
+    - private prompt management
+    - provider and model abstraction
+    - agent lifecycle state
+    - structured intent generation
+    - local deterministic validation before handoff
+  does_not_own:
+    - production server execution
+    - direct infrastructure mutation from model output
+    - unrestricted autonomous agents
+    - LangSmith-owned prompt storage
+    - raw chat history as durable memory
+priority_use_cases:
+  - id: plaud-transcript-derivations
+    value: Convert transcripts into decisions, tasks, gaps, specs, and memory candidates.
+  - id: agent-creation-on-demand
+    value: Convert a user request into a governed agent creation intent.
+  - id: ards-sdd-memory
+    value: Preserve useful operational knowledge as scoped, tagged, provenance-aware memory.
+  - id: operation-intents
+    value: Emit validated work requests instead of free-form actions.
+  - id: orchestrator-handoff
+    value: Delegate execution to 4uentes-orchestor or a future ARDS/SDD orchestrator.
+strategic_layers:
+  - application_context
+  - memory_layer
+  - prompt_layer
+  - provider_layer
+  - agent_lifecycle
+  - intent_layer
+  - orchestrator_boundary
+next_milestone:
+  id: agent-runtime-core-v1
+  focus: agent_creation_intent
+  input_fields:
+    - tenant_id
+    - user_id
+    - application_id
+    - user_request
+    - available_capabilities
+    - optional_governed_context
+  output_fields:
+    - agent_intent_id
+    - capability_id
+    - prompt_id
+    - prompt_version
+    - provider
+    - model
+    - required_memory
+    - required_tools
+    - allowed_intents
+    - blocked_intents
+    - validation_status
+    - audit_metadata
+success_metrics:
+  - request_to_validated_intent_time
+  - capability_classification_accuracy
+  - unsafe_intent_rejection_rate
+  - useful_memory_records_generated
+  - manual_work_reduction_for_specs_tasks_and_summaries
+  - output_traceability_to_prompt_model_memory_and_capability
+  - private_prompt_and_sensitive_context_leakage_count
+brainstorming_filters:
+  - improves_governed_knowledge_capture
+  - improves_safe_agent_creation_or_lifecycle_control
+  - improves_structured_intent_quality
+  - reduces_operational_risk
+  - preserves_ards_sdd_traceability
+validation:
+  documents:
+    - docs/architecture/agent-runtime-product-intent.md
+  related_specs:
+    - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
+    - specs/capabilities/prompt-catalog-and-versioning.yaml
+    - specs/capabilities/user-activity-ards-memory.yaml
+    - specs/integrations/plaud-sst-orchestrator-derivations.yaml
