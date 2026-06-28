@@ -1,9 +1,9 @@
 # Agent Core And Orchestrator Boundary
 
 ## Goal
-Prepare this repository to become the core for creating SST agents and managing their lifecycle.
+Prepare this repository to become the core for creating SST agents and managing their local proposal lifecycle.
 
-Server orchestration is a separate responsibility owned by the `4uentes-orchestor` repository. This repository defines the agent-side contracts and lifecycle behavior that can request work from that orchestrator through structured, validated intents.
+Server orchestration is a separate responsibility owned by the `4uentes-orchestor` repository. This repository defines the agent-side contracts and local proposal behavior that can request orchestrator review through structured, validated intents.
 
 ## Baseline From Idea Intake
 The April 10 idea note introduces three durable directions:
@@ -16,9 +16,9 @@ These ideas fit the existing repository rule: agents propose structured intent, 
 ## Repository Role
 This repository should own:
 - agent creation contracts;
-- agent lifecycle state models;
+- local agent lifecycle state models for proposal preparation;
 - provider-agnostic agent contracts;
-- agent-side state machines for planning, validation handoff, and lifecycle tracking;
+- agent-side state machines for planning, validation handoff, and local lifecycle tracking;
 - POCs that prove agent behavior with mocks before integration with `4uentes-orchestor`;
 - reusable Python modules promoted from POCs after tests and documented assumptions;
 - validation rules for generated files, workspace mutations, and operation intent requests.
@@ -40,30 +40,30 @@ The `4uentes-orchestor` repository should own:
 - permission checks tied to deployment/runtime concerns;
 - execution audit records for server mutations.
 
-This repository can define the payload shape that an agent emits, but `4uentes-orchestor` owns whether, when, and how that payload is executed.
+This repository can define the payload shape that an agent emits, but `4uentes-orchestor` owns whether, when, and how that payload is accepted, queued, scheduled, or executed.
 
 ## Target Flow
 ```text
 SST application event
-  -> agent lifecycle contract in this repository
-  -> agent state machine
+  -> local agent proposal contract in this repository
+  -> local agent proposal state machine
   -> optional provider call
   -> structured operation intent
   -> orchestrator integration boundary
-  -> 4uentes-orchestor validation, queue, schedule, and execution
+  -> 4uentes-orchestor validation, queue, schedule, or rejection
   -> auditable result
 ```
 
 The same boundary should cover generated ARDS/SDD workspaces, user history update proposals, UI customization requests, and future server maintenance actions.
 
-## Agent Lifecycle State Responsibilities
-The agent lifecycle state model should make agent work explicit and inspectable before any handoff to `4uentes-orchestor`.
+## Local Agent State Responsibilities
+The local agent state model should make proposed agent work explicit and inspectable before any handoff to `4uentes-orchestor`. These states are not `4uentes-orchestor` request lifecycle states.
 
 Initial candidate states:
 - `requested`: SST or a user requested agent work.
 - `classified`: the request was mapped to a known capability.
-- `planned`: the agent returned structured intent or a backend planner produced a deterministic plan.
-- `validated_for_handoff`: local checks approved the intent shape for an orchestrator handoff.
+- `planned`: the agent returned structured proposal data or a backend planner produced a deterministic local plan.
+- `validated_for_handoff`: local checks accepted the intent shape for an orchestrator handoff.
 - `handoff_requested`: an orchestrator request was emitted.
 - `handoff_accepted`: `4uentes-orchestor` accepted ownership of execution.
 - `completed`: the agent lifecycle completed after receiving an accepted result.
@@ -73,17 +73,27 @@ Initial candidate states:
 State transitions should be event-driven and should record actor, timestamp, input reference, output reference, and external orchestrator correlation id when applicable.
 
 ## Orchestrator Handoff Boundary
-Server manipulation must be expressed as operation intents, not free-form commands. This repository can create and test those intents; `4uentes-orchestor` executes or rejects them.
+Server manipulation must be expressed as operation intents, not free-form commands. This repository can create and test proposal payloads; `4uentes-orchestor` accepts, schedules, executes, or rejects them.
 
-Examples of operation intent types:
+Initial operation intent types:
 - `workspace.generate_bundle`
 - `workspace.apply_patch`
 - `user_history.propose_update`
 - `ui_customization.enqueue_change`
+
+Future blocked operation types:
 - `server.restart_service`
 - `server.refresh_cache`
 
+Server operations stay blocked until RBAC, audit, rollback, scheduling policy, and approval gates exist.
+
 The first promoted implementation should avoid real production server actions. POCs in this repository should use a fake orchestrator client that records requested operations and validates lifecycle transitions.
+
+## Local Fake Adapter
+
+The CR-SST-0022 adapter is local test infrastructure. It validates handoff payloads, records in-memory receipts, and returns local statuses such as `accepted_for_review`, `rejected_by_policy`, `duplicate`, and `conflict`.
+
+`accepted_for_review` does not mean `queued`, `running`, or approved for execution. It only means the local fake boundary accepted the proposal shape for review.
 
 ## Handoff Payload
 The handoff payload should include:
@@ -106,9 +116,10 @@ POCs for this direction belong under `pocs/` and `specs/pocs/`.
 The first POC should prove:
 - a mock SST event can enter an agent lifecycle state model;
 - a mock agent or deterministic planner can return structured operation intent;
-- local validation can approve or reject that intent for handoff;
-- approved work can be sent to a fake orchestrator client;
+- local validation can accept or reject that intent shape for handoff;
+- human-reviewed proposal work can be recorded by a fake orchestrator client;
 - a fake orchestrator response can complete the agent lifecycle without touching a real server.
+- duplicate and conflicting idempotency keys are handled deterministically.
 
 Promotion into `src/` requires tests, a spec, and clear evidence that provider calls and orchestrator integration remain replaceable.
 

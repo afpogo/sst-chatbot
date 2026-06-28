@@ -51,6 +51,9 @@ entries:
     - id: sst-agent-feed
       path: specs/integrations/sst-agent-feed.yaml
       status: draft
+    - id: sst-chatbot-core-orchestrator-sync
+      path: specs/integrations/sst-chatbot-core-orchestrator-sync.yaml
+      status: draft
     - id: plaud-sst-orchestrator-derivations
       path: specs/integrations/plaud-sst-orchestrator-derivations.yaml
       status: draft
@@ -79,6 +82,10 @@ entries:
     - id: application-context-connector-poc
       path: specs/pocs/application-context-connector-poc.yaml
       status: draft
+policies:
+  index: "specs/policies/00-index.yaml"
+  registry: "specs/integration/policies.yaml"
+  docs: "docs/policies/README.md"
 templates:
   - path: specs/templates/feature.template.yaml
   - path: specs/templates/poc.template.yaml

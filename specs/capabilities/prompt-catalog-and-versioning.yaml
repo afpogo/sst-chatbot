@@ -58,6 +58,39 @@ contract:
       - none
       - in_memory
       - 24h
+lifecycle:
+  stages:
+    - id: discovery
+      description: Identify capability, task, variables, sensitivity, and compatible providers or models.
+    - id: design
+      description: Define id, version, status, messages, variables, visibility, trace policy, cache policy, providers, and models.
+    - id: author
+      description: Create or edit YAML under src/app/prompts/catalog.
+    - id: register
+      description: Add the prompt path to the explicit registry allowlist.
+    - id: static_validation
+      description: Validate required metadata, roles, declared variables, placeholders, and variable types.
+    - id: local_render
+      description: Render locally with fake or mock variables before provider execution.
+    - id: assemble
+      description: Convert rendered messages to framework-specific messages only at the integration boundary.
+    - id: execute
+      description: Send rendered messages to the provider adapter; providers do not read prompt YAML.
+    - id: trace
+      description: Record metadata-only trace data including prompt id, version, hash, provider, model, and variable names.
+    - id: validate
+      description: Run prompt tests and ARDS/SDD checks.
+    - id: promote
+      description: Promote draft prompts to stable only after tests and supporting evidence.
+    - id: deprecate
+      description: Mark old versions deprecated after consumers migrate.
+  agent_rules:
+    - New capabilities or tasks create new prompt ids.
+    - Observable behavior changes require a new prompt version unless the prompt is still draft.
+    - Stable prompts must not be edited in place for behavior changes.
+    - Consumed prompt versions should be deprecated before removal.
+    - Provider options, memory retrieval rules, and external execution rules stay outside prompt YAML.
+    - Sensitive variables must be marked sensitive.
 rules:
   - LangSmith is not the source of prompts.
   - Prompt bodies must not be intentionally added to trace metadata.

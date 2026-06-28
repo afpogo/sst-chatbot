@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from typing import Any, Iterable
+import math
+from typing import Any, Callable, Iterable
 
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage
@@ -24,7 +25,7 @@ class SourceDocument:
 @dataclass(frozen=True)
 class RetrievedDocument:
     document: Document
-    score: int
+    score: float
 
 
 @dataclass(frozen=True)
@@ -32,9 +33,12 @@ class RetrieverConfig:
     search_type: str = "similarity"
     top_k: int = 3
     fetch_k: int = 8
-    score_threshold: int = 1
+    score_threshold: float = 0.0
     lambda_mult: float = 0.5
     workspace_id: str | None = None
+    strategy: str = "lexical"
+    embedding_query_fn: Callable[[str], list[float]] | None = None
+    embedding_document_vectors: list[list[float]] | None = None
 
 
 def load_source_documents(sources: Iterable[SourceDocument]) -> list[Document]:
@@ -124,13 +128,13 @@ def _document_diversity_penalty(document: Document, selected: list[Document]) ->
     return max_similarity
 
 
-def retrieve_relevant_documents(
+def retrieve_relevant_documents_lexical(
     query: str,
     documents: Iterable[Document],
     top_k: int = 3,
     workspace_id: str | None = None,
     search_type: str = "similarity",
-    score_threshold: int = 1,
+    score_threshold: float = 0.0,
     fetch_k: int = 8,
     lambda_mult: float = 0.5,
 ) -> list[RetrievedDocument]:
@@ -182,12 +186,108 @@ def retrieve_relevant_documents(
     return scored[:top_k]
 
 
+def _cosine_similarity(left: list[float], right: list[float]) -> float:
+    if not left or not right:
+        return 0.0
+    if len(left) != len(right):
+        return 0.0
+
+    dot_product = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(a * a for a in left))
+    right_norm = math.sqrt(sum(b * b for b in right))
+    if left_norm == 0.0 or right_norm == 0.0:
+        return 0.0
+    return dot_product / (left_norm * right_norm)
+
+
+def retrieve_relevant_documents_embeddings(
+    query: str,
+    documents: list[Document],
+    document_vectors: list[list[float]],
+    query_embedding_fn: Callable[[str], list[float]],
+    top_k: int = 3,
+    workspace_id: str | None = None,
+    score_threshold: float = 0.0,
+) -> list[RetrievedDocument]:
+    if len(documents) != len(document_vectors):
+        raise ValueError("documents and document_vectors must have the same length")
+
+    query_vector = query_embedding_fn(query)
+    scored: list[RetrievedDocument] = []
+
+    for document, vector in zip(documents, document_vectors):
+        if workspace_id and document.metadata.get("workspace_id") != workspace_id:
+            continue
+        score = _cosine_similarity(query_vector, vector)
+        if score >= score_threshold:
+            scored.append(RetrievedDocument(document=document, score=score))
+
+    scored.sort(key=lambda item: item.score, reverse=True)
+    return scored[:top_k]
+
+
+def retrieve_relevant_documents(
+    query: str,
+    documents: list[Document],
+    top_k: int = 3,
+    workspace_id: str | None = None,
+    search_type: str = "similarity",
+    score_threshold: float = 0.0,
+    fetch_k: int = 8,
+    lambda_mult: float = 0.5,
+    embedding_document_vectors: list[list[float]] | None = None,
+    embedding_query_fn: Callable[[str], list[float]] | None = None,
+) -> list[RetrievedDocument]:
+    if embedding_query_fn is not None or embedding_document_vectors is not None:
+        if embedding_query_fn is None:
+            raise ValueError("embedding_query_fn is required when embedding_document_vectors is set")
+        if embedding_document_vectors is None:
+            raise ValueError("embedding_document_vectors is required when embedding_query_fn is set")
+
+        return retrieve_relevant_documents_embeddings(
+            query,
+            documents,
+            embedding_document_vectors,
+            query_embedding_fn=embedding_query_fn,
+            top_k=top_k,
+            workspace_id=workspace_id,
+            score_threshold=score_threshold,
+        )
+
+    return retrieve_relevant_documents_lexical(
+        query,
+        documents,
+        top_k=top_k,
+        workspace_id=workspace_id,
+        search_type=search_type,
+        score_threshold=score_threshold,
+        fetch_k=fetch_k,
+        lambda_mult=lambda_mult,
+    )
+
+
 class SSTRetriever(BaseRetriever):
     documents: list[Document]
     config: RetrieverConfig = RetrieverConfig()
 
     def _get_relevant_documents(self, query: str, *, run_manager: Any) -> list[Document]:
-        retrieved = retrieve_relevant_documents(
+        if self.config.strategy == "embedding":
+            if self.config.embedding_query_fn is None or self.config.embedding_document_vectors is None:
+                raise ValueError(
+                    "Embedding strategy requires embedding_query_fn and embedding_document_vectors"
+                )
+
+            retrieved = retrieve_relevant_documents_embeddings(
+                query,
+                self.documents,
+                self.config.embedding_document_vectors,
+                query_embedding_fn=self.config.embedding_query_fn,
+                top_k=self.config.top_k,
+                workspace_id=self.config.workspace_id,
+                score_threshold=self.config.score_threshold,
+            )
+        else:
+            retrieved = retrieve_relevant_documents(
             query,
             self.documents,
             top_k=self.config.top_k,

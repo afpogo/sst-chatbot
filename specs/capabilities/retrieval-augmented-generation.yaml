@@ -12,12 +12,56 @@ layers:
       - title
       - document_type
       - workspace_id
+      - source_tier
+      - owner_tier
+      - origin
   indexing:
     description: Split documents into chunks that preserve source metadata.
   retrieval:
     description: Retrieve relevant chunks through a retriever contract after applying workspace and permission filters.
   generation:
     description: Inject retrieved context into a prompt and generate an answer with sources.
+vector_retrieval_lifecycle:
+  status: candidate_pattern
+  description: Architecture pattern for turning source documents into governed vector-searchable chatbot context.
+  steps:
+    - normalize_source_text
+    - build_canonical_text
+    - validate_token_budget
+    - split_into_chunks
+    - generate_chunk_embeddings
+    - persist_vector_with_metadata
+    - embed_query
+    - search_by_similarity
+    - apply_metadata_filters
+    - deduplicate_or_rerank
+    - return_context_with_sources
+  required_vector_metadata:
+    - chunk_id
+    - source_id
+    - workspace_id
+    - account_id
+    - source_tier
+    - origin
+    - embedding_model
+    - embedding_dimension
+    - pipeline_version
+    - indexable
+  rebuild_triggers:
+    - embedding_model_changed
+    - embedding_dimension_changed
+    - chunking_policy_changed
+    - required_metadata_contract_changed
+ingestion_modes:
+  - internal_governance:
+      description: Static internal corpus used as product guidance.
+      update_mode: controlled_repo_release
+  - generated_user_workspace_bootstrap:
+      description: Generic user workspace baseline generated during onboarding.
+      update_mode: deterministic_generator
+  - generated_user_workspace_sync:
+      description: User workspace synchronization from scripts in another repo.
+      update_mode: scripted_sync_with_validation
 retriever_strategies:
   - similarity
   - similarity_score_threshold
@@ -30,6 +74,10 @@ contract_rules:
   - Answers grounded in private documents should include sources.
   - Unit tests must run without external provider calls.
   - Internal ARDS/SDD knowledge and generated user artifacts must remain separated by metadata and ownership.
+  - User workspace context starts generic and can be specialized after validated sync.
+  - Synced documentation should carry source provenance (`origin`, `source_tier`, `sync_revision`) for audit and retrieval filtering.
+  - Vector records must persist embedding model, embedding dimension, and pipeline version.
+  - Vector indexes should be rebuilt or migrated deliberately when embedding or chunking policy changes.
 future_adapters:
   embeddings:
     - openai
@@ -42,6 +90,9 @@ future_adapters:
 validation:
   tests:
     - Documents preserve metadata.
+    - Documents include source_tier and origin for filtering.
     - Splitting creates bounded chunks.
+    - Vector records preserve embedding model and pipeline version metadata.
     - Retrieval filters by workspace.
+    - Sync provenance is preserved during ingestion.
     - Chain answers from retrieved context.

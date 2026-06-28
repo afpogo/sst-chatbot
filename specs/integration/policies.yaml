@@ -1,0 +1,75 @@
+schema_version: "1.0"
+version: 1
+kind: "ards_sdd_agent_policy_registry"
+status: "active"
+updated_at: "2026-06-13"
+purpose: >
+  Local adoption registry for the canonical ARDS/SDD agent operating policies
+  inherited from `4uentes-ards-core`.
+
+standard_source:
+  repo: "4uentes-ards-core"
+  registry: "specs/integration/policies.yaml"
+  core_ref: "4uentes-ards-core@2ad4e0f"
+  adoption_mode: "scoped-local-adoption"
+
+provider_model:
+  provider_agnostic: true
+  model_names_are_aliases: true
+  alias_resolution: "repo-local-configured"
+  required_alias_slots:
+    - "fast_verifiable_task"
+    - "long_context_task"
+    - "high_reasoning_task"
+
+local_adoption:
+  repo: "sst-chatbot"
+  project_type: "backend-api"
+  discovery:
+    agents_entrypoint: "AGENTS.md"
+    policy_index: "specs/policies/00-index.yaml"
+    policies_docs: "docs/policies/README.md"
+  validation:
+    command: ".\\.venv\\Scripts\\python.exe scripts\\check.py"
+
+policies:
+  - id: "agent-model-selection-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-model-selection-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+  - id: "agent-resource-degradation-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-resource-degradation-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+  - id: "agent-task-atomization-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-task-atomization-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+  - id: "agent-delegation-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-delegation-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+  - id: "agent-context-management-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-context-management-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+  - id: "agent-architecture-boundary-policy"
+    source_repo: "4uentes-ards-core"
+    source_registry: "specs/integration/policies.yaml"
+    source_human_doc: "docs/policies/agent-architecture-boundary-policy.md"
+    adoption_status: "adopted"
+    human_doc: "docs/policies/README.md"
+
+gaps: []
+validation:
+  command: ".\\.venv\\Scripts\\python.exe scripts\\check.py"

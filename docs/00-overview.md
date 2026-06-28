@@ -14,6 +14,7 @@ The repo must remain provider-agnostic. OpenAI, Anthropic, Deepseek, local model
 - OpenAI is currently the first real provider experiment.
 - ARDS/SDD documentation under `docs/` and structured contracts under `specs/`.
 - Plaud transcript derivations are documented as an asynchronous cross-repo handoff through `4uentes-orchestor`, with production Plaud ingestion staying in `sst-bend`.
+- Repository synchronization is now documented as a tri-repo contract: `sst-chatbot` adopts policy from `4uentes-ards-core` and hands structured execution intents to `4uentes-orchestor`.
 - Model and subagent selection policy lives in `docs/playbooks/model-selection-policy.md`.
 
 ## Product Intent
@@ -48,6 +49,7 @@ operational context
 - OpenAI initialization is isolated behind `src/app/llm/openai_client.py`.
 - Provider/model/memory swapping is parameterized through `src/app/providers/` and `.env`.
 - Core prompts are managed by a private repo-owned engine under `src/app/prompts/`.
+- Prompt lifecycle guidance for agents and humans lives in `docs/playbooks/05-author-and-validate-prompts.md`.
 
 ## Cross-Repo Plaud Derivations
 - Architecture: `docs/architecture/plaud-sst-orchestrator-agent-derivations.md`
@@ -55,6 +57,12 @@ operational context
 - Agent capability: `specs/capabilities/plaud-transcript-derivations.yaml`
 - Operational note: `docs/tasks/2026-05-24-plaud-sst-orchestrator-handoff.md`
 - Model selection annex: `docs/playbooks/model-selection-policy.md`
+
+## Cross-Repo Core And Orchestrator Sync
+- Sync contract: `specs/integrations/sst-chatbot-core-orchestrator-sync.yaml`
+- Local binding: `specs/ards/contract-binding.yaml`
+- Core policy adoption: `specs/integration/policies.yaml`
+- Orchestrator boundary: `specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml`
 
 ## Out Of Scope
 - Business logic.

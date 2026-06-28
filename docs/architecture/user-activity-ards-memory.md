@@ -3,7 +3,7 @@
 ## Goal
 Capture relevant SST user activity as governed internal ARDS memory, then use that memory to generate curated ARDS/SDD artifacts when appropriate.
 
-This is a separate concern from server orchestration. The chatbot and agent core should understand, classify, tag, and propose artifacts. Runtime execution remains behind explicit backend or orchestrator boundaries.
+This is a separate concern from server orchestration and from authoritative SST business state. The chatbot and agent core should understand, classify, tag, and propose artifacts. Runtime execution remains behind explicit backend or orchestrator boundaries.
 
 ## Problem
 SST already has application domains such as Articles, Dictionary, and soon Bitacoras. Robots will add operational actors that need to understand the application where they reside.
@@ -18,7 +18,7 @@ application activity and chatbot conversation
   -> curated ARDS/SDD workspace artifacts
 ```
 
-The first layer is evidence. The second layer is governed memory. The third layer is user-facing or project-facing documentation.
+The first layer is evidence. The second layer is governed operational memory. The third layer is user-facing or project-facing documentation after review.
 
 ## Internal Memory Rules
 - Raw conversation history must not automatically become ARDS/SDD files.
@@ -27,6 +27,7 @@ The first layer is evidence. The second layer is governed memory. The third laye
 - Memory can be user-visible without being promoted into workspace files.
 - Corrections and invalidations should be new records or state transitions, not silent edits.
 - Generated ARDS/SDD artifacts should cite or reference the memory records they derived from.
+- Memory records are not authoritative product records for SST domains such as Articles, Dictionary, Bitacoras, Accounts, or Auth.
 
 ## Candidate Event Classes
 - `sst.chat.message.captured`
@@ -55,7 +56,7 @@ Tags must be stored as structured attributes, not inferred only from text.
 ## Provenance Model
 Use a lightweight mapping inspired by W3C PROV:
 - `Agent`: SST user, robot, chatbot agent, backend service, orchestrator job.
-- `Activity`: capture comment, classify memory, propose artifact, approve decision, invalidate memory.
+- `Activity`: capture comment, classify memory, propose artifact, record reviewed decision, invalidate memory.
 - `Entity`: comment, decision, evidence record, gap, generated spec, ADR, ARDS bundle.
 
 Important relations:
@@ -74,12 +75,14 @@ Recommended classification:
 - status: `candidate`
 - source: `repo_discovery`
 
-Safe intents:
+Safe initial intents:
 - `user_history.propose_update`
 - `workspace.generate_bundle`
 
-Blocked until a later authorization path:
+Requires human/orchestrator review before any mutation:
 - `workspace.apply_patch`
+
+Blocked until a later authorization path:
 - `server.restart_service`
 - `server.refresh_cache`
 
@@ -88,7 +91,7 @@ Blocked until a later authorization path:
 2. Add a deterministic classifier that maps normalized activity events to memory candidates.
 3. Add governance validation for tags, visibility, lifecycle status, and provenance.
 4. Add a mock event source for Articles, Dictionary, Bitacoras, chat messages, and Robots discovery.
-5. Add a generator path that can produce ARDS/SDD bundles from approved memory records.
+5. Add a generator path that can produce ARDS/SDD bundles from human-reviewed memory records.
 6. Add retrieval filters so robots can see only memory in their account, application, and capability scope.
 7. Integrate with the real SST event boundary after the POC proves the contract.
 

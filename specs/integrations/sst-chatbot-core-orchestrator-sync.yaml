@@ -1,0 +1,95 @@
+version: 1
+kind: integration
+id: sst-chatbot-core-orchestrator-sync
+status: draft
+title: SST chatbot synchronization with ARDS core and orchestrator
+goal: Define how sst-chatbot stays aligned with 4uentes-ards-core contracts and 4uentes-orchestor execution handoffs without owning production orchestration or canonical ARDS policy.
+participants:
+  ards_core:
+    repo: 4uentes-ards-core
+    authority:
+      - canonical ARDS/SDD operating policies
+      - reusable policy manifests
+      - shared contract versions
+      - baseline templates and governance vocabulary
+  orchestrator:
+    repo: 4uentes-orchestor
+    authority:
+      - cross-repo execution ownership
+      - durable queues and retries
+      - production scheduling policy
+      - execution audit and operation receipts
+  agent_runtime:
+    repo: sst-chatbot
+    authority:
+      - provider-agnostic agent runtime contracts
+      - private prompt and model boundaries
+      - retriever POCs and generated workspace context contracts
+      - structured intent preparation before orchestrator handoff
+sync_streams:
+  core_contract_adoption:
+    direction: 4uentes-ards-core -> sst-chatbot
+    current_binding: specs/ards/contract-binding.yaml
+    required_fields:
+      - resolved_contract_version
+      - core_ref
+      - adopted_policy_ids
+      - adoption_mode
+    local_outputs:
+      - specs/integration/policies.yaml
+      - docs/policies/README.md
+      - AGENTS.md
+  orchestrator_handoff:
+    direction: sst-chatbot -> 4uentes-orchestor
+    local_boundary:
+      - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
+      - src/app/orchestrator/types.py
+      - src/app/orchestrator/validation.py
+      - src/app/orchestrator/fake_client.py
+    required_fields:
+      - operation_intent_id
+      - capability_id
+      - tenant_id
+      - idempotency_key
+      - correlation_id
+      - audit_metadata
+    allowed_initial_operations:
+      - workspace.generate_bundle
+      - user_history.propose_update
+      - ui_customization.enqueue_change
+      - workspace.apply_patch
+  user_workspace_context_sync:
+    direction: external documentation repo -> orchestrator or SST backend -> sst-chatbot retrieval index
+    purpose: Feed user-specific generated ARDS/SDD context into chatbot retrievers after deterministic validation.
+    required_metadata:
+      - workspace_id
+      - account_id
+      - source_tier
+      - origin
+      - sync_source_repo
+      - sync_revision
+      - indexable
+rules:
+  - 4uentes-ards-core is the source of canonical ARDS/SDD policies; sst-chatbot only adopts scoped local copies.
+  - 4uentes-orchestor owns execution lifecycle after a handoff is accepted.
+  - sst-chatbot must emit structured intents and normalized agent outputs, not executable server commands.
+  - User workspace documentation can be indexed only after sync metadata and manifest eligibility are validated.
+  - The local fake orchestrator adapter remains test infrastructure until a real transport is defined.
+  - Contract drift must be recorded by updating specs/ards/contract-binding.yaml before changing runtime behavior.
+validation:
+  expected_checks:
+    - ARDS core binding contains the resolved core contract version and core ref.
+    - Orchestrator handoff payloads include idempotency and audit metadata.
+    - Retriever-ingested user workspace documents carry source tier and sync revision.
+    - Server operation intents remain blocked unless approved by orchestrator policy.
+related_docs:
+  - docs/architecture/agent-core-and-orchestrator-boundary.md
+  - docs/architecture/user-workspace-ards.md
+  - docs/architecture/retrievers-for-sst.md
+  - docs/policies/README.md
+related_specs:
+  - specs/ards/contract-binding.yaml
+  - specs/integration/policies.yaml
+  - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
+  - specs/capabilities/retrieval-augmented-generation.yaml
+  - specs/capabilities/retriever-strategies.yaml
