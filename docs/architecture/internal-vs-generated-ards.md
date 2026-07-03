@@ -26,7 +26,19 @@ It contains a project-specific structure such as:
 
 The generated package should be downloadable and should only include files approved by backend validation.
 
+The generated workspace should start generic and become user-specific:
+
+- generic baseline: required skeleton and default governance references;
+- user specialization: validated files synced from an external documentation source repository.
+
+This allows fast onboarding and later domain-specific adaptation without breaking core governance constraints.
+
 Generated ARDS/SDD can also exist before download as a user workspace. That workspace may be logical, physical, or hybrid depending on how SST stores generated files and metadata.
+
+For chatbot indexing, generated documents should be considered only when:
+- sync and validation are complete,
+- ownership is explicit (`workspace_id`, `account_id`, `source_tier`),
+- the manifest marks the file as retrievable and not archived/sensitive.
 
 ## How The Agent Should Use Both
 The agent should use internal ARDS/SDD as retrieval context. It should then produce a structured generation intent, not raw filesystem writes.

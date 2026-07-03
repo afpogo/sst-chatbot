@@ -4,6 +4,16 @@ id: agent-lifecycle-and-orchestrator-boundary
 status: draft
 title: Agent lifecycle and orchestrator boundary
 goal: Define how SST events can trigger agent-guided workflows that produce validated operation intents for handoff to the 4uentes-orchestor repository.
+orchestrator_link:
+  orchestrator_repo: "4uentes-orchestor"
+  state_kind: "feature_state"
+  state_id: "sst-chatbot"
+  capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+  work_origin: "orchestrator-request"
+  request_id: "CR-SST-0021"
+  evidence_ref: "evidence/requests/CR-SST-0021/implementation-summary.md"
+  status_hint: "implemented-local"
+  correlation_id: "CR-SST-0021"
 ownership:
   this_repository:
     - agent creation contracts
@@ -11,6 +21,7 @@ ownership:
     - provider-agnostic planning behavior
     - structured operation intent schemas
     - fake orchestrator client for POCs and tests
+    - local proposal records that are not authoritative application state
   4uentes_orchestor:
     - server orchestration
     - durable operation queues
@@ -49,13 +60,42 @@ operation_intent:
     - 4uentes-orchestor decides whether the operation can be queued or executed.
     - Every operation must include account or tenant scope.
     - Every handoff must include an idempotency key and correlation id.
+    - sst-chatbot is a proposal producer only; it does not own SST business authority or orchestrator lifecycle decisions.
   initial_types:
     - workspace.generate_bundle
     - workspace.apply_patch
     - user_history.propose_update
     - ui_customization.enqueue_change
-    - server.refresh_cache
-    - server.restart_service
+  current_policy:
+    safe_initial_types:
+      - workspace.generate_bundle
+      - user_history.propose_update
+      - ui_customization.enqueue_change
+    human_review_required_initial_types:
+      - workspace.apply_patch
+    future_blocked_types:
+      - server.refresh_cache
+      - server.restart_service
+    notes:
+      - Server operations are not initial intent types. They remain future blocked types until RBAC, audit, rollback, scheduling policy, and approval gates exist.
+local_phase_policy:
+  authority: "proposal_only"
+  summary: "CR-SST-0021 local phases describe sst-chatbot internal record preparation, not 4uentes-orchestor request lifecycle states."
+  phase_names:
+    - capture
+    - classify
+    - local_validate
+    - draft_intent
+    - prepare_handoff
+    - run_provider_adapter
+    - collect_observation
+    - select_visibility
+    - archive_local_record
+    - reject_local_record
+  rules:
+    - "Local phases must not be interpreted as `inbox`, `planned`, `queued`, `running`, `done`, or `rejected` states."
+    - "`prepare_handoff` only prepares proposal data for human/orchestrator review."
+    - "`run_provider_adapter` can call fake or replaceable provider adapters only; it must not mutate product state."
 handoff_payload:
   required: true
   fields:
@@ -70,6 +110,26 @@ handoff_payload:
     - idempotency_key
     - correlation_id
     - audit_metadata
+local_fake_orchestrator_adapter:
+  status: implemented-local
+  request_id: CR-SST-0022
+  implementation_refs:
+    - src/app/orchestrator/types.py
+    - src/app/orchestrator/validation.py
+    - src/app/orchestrator/store.py
+    - src/app/orchestrator/fake_client.py
+  allowed_statuses:
+    - received
+    - accepted_for_review
+    - rejected_by_policy
+    - duplicate
+    - conflict
+  rules:
+    - "The fake adapter is local test infrastructure, not real transport."
+    - "Accepted fake receipts mean accepted for review only, never queued or running."
+    - "Duplicate idempotency with the same payload returns `duplicate` and points to the previous receipt."
+    - "Duplicate idempotency with a different payload returns `conflict`."
+    - "Rejected payloads are not stored as accepted handoffs."
 offline_execution:
   required: false
   description: Scheduling hint for work that should run during low-traffic windows. Final scheduling policy belongs to 4uentes-orchestor.
@@ -80,6 +140,7 @@ contract_rules:
   - POCs must remain under pocs/ and specs/pocs/ until promotion criteria are met.
   - Agent output must not directly mutate user history, UI files, workspaces, or servers.
   - This repository may request server work only through the 4uentes-orchestor handoff boundary.
+  - Business state remains owned by SST functional repositories; sst-chatbot only proposes structured operational records.
 validation:
   tests:
     - Unknown operation types are rejected.
@@ -87,3 +148,5 @@ validation:
     - Approved intents can produce handoff payloads with idempotency keys and correlation ids.
     - Fake orchestrator client records accepted and rejected handoffs.
     - Server orchestration POCs do not require network or production credentials.
+    - CR-SST-0021 memory runtime tests reject server.restart_service and server.refresh_cache until approval gates exist.
+    - CR-SST-0022 fake orchestrator tests cover accepted_for_review, rejected_by_policy, duplicate, conflict, human review, and server operation blocking.

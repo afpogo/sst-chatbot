@@ -34,6 +34,39 @@ Layers:
 - Retrieval: select relevant chunks through a retriever contract.
 - Answer chain: use LCEL to compose retrieval context, prompt, model, and parser.
 
+## Vector Retrieval Lifecycle
+
+The embeddings course material should be adopted as an architecture pattern for future vector database work, not only as an implementation detail. The pattern turns documents into auditable, searchable context for the chatbot core.
+
+Recommended lifecycle:
+
+```text
+source document
+  -> normalize text and required metadata
+  -> build canonical text representation
+  -> validate token budget
+  -> split into chunks with overlap
+  -> generate one embedding per chunk
+  -> persist vector + chunk text + metadata
+  -> query embedding
+  -> vector similarity search
+  -> metadata filtering
+  -> optional deduplication or reranking
+  -> final context for the answer chain
+```
+
+This lifecycle gives SST a stable retrieval pattern independent of the first vector store. The same contract can be backed by an in-memory test store, FAISS, pgvector, Milvus, or another dedicated vector database.
+
+The key architectural rule is that a vector record is not just a vector. It must preserve enough metadata to enforce governance and traceability:
+
+- `chunk_id` and `source_id`;
+- `workspace_id` and account or tenant scope;
+- `source_tier` and `origin`;
+- `embedding_model`, `embedding_dimension`, and `pipeline_version`;
+- eligibility flags such as `indexable`, `visible_to_user`, and lifecycle status.
+
+If the embedding model, chunking logic, or metadata contract changes, the index should be treated as versioned state and rebuilt or migrated deliberately.
+
 ## Safety And Multi-Tenant Rules
 - Every indexed document needs metadata such as `workspace_id`, `source_id`, `document_type`, and `title`.
 - Retrieval must filter by workspace or account before ranking.
@@ -41,6 +74,7 @@ Layers:
 - Unit tests must not require provider calls or paid quota.
 - Future vector stores must preserve the same metadata filtering behavior.
 - Internal ARDS/SDD and generated ARDS/SDD must not be mixed in the same corpus without explicit ownership metadata.
+- Vector indexes must preserve embedding model and pipeline version metadata so retrieval results remain auditable.
 
 ## Evolution Path
 After the local POC, the next implementation steps are:

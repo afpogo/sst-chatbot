@@ -1,0 +1,18 @@
+schema_version: "1.0"
+version: 1
+kind: "policy_specs_index"
+status: "active"
+updated_at: "2026-06-13"
+purpose: >
+  Index of locally adopted ARDS/SDD agent operating policy artifacts inherited
+  from $coreRepoId.
+specs:
+  - id: "agent-operating-policy-registry"
+    path: "specs/integration/policies.yaml"
+    status: "active"
+docs:
+  - id: "policies-readme"
+    path: "docs/policies/README.md"
+    status: "active"
+validation:
+  command: ".\\.venv\\Scripts\\python.exe scripts\\check.py"

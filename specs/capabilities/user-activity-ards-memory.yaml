@@ -4,6 +4,22 @@ id: user-activity-ards-memory
 status: draft
 title: User activity ARDS memory
 goal: Convert relevant SST conversations, decisions, comments, and application events into governed internal ARDS memory records.
+authority_boundary:
+  role: "proposal_producer"
+  rules:
+    - ARDS memory records are operational context, not authoritative SST business state.
+    - User-visible, downloadable, workspace, or application mutations require a separate orchestrator-governed request and deterministic validation.
+    - Raw chat and runtime events are evidence inputs; they do not become application facts automatically.
+orchestrator_link:
+  orchestrator_repo: "4uentes-orchestor"
+  state_kind: "feature_state"
+  state_id: "sst-chatbot"
+  capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+  work_origin: "orchestrator-request"
+  request_id: "CR-SST-0021"
+  evidence_ref: "evidence/requests/CR-SST-0021/implementation-summary.md"
+  status_hint: "implemented-local"
+  correlation_id: "CR-SST-0021"
 inputs:
   - normalized_activity_event
   - chatbot_message
@@ -36,6 +52,13 @@ memory_record:
     - body
     - body_hash
     - created_at
+  implementation_refs:
+    - src/app/memory/types.py
+    - src/app/memory/validation.py
+    - src/app/memory/store.py
+    - src/app/memory/phases.py
+    - src/app/memory/visibility.py
+    - src/app/memory/handoff.py
   tag_groups:
     - domain
     - kind
@@ -60,6 +83,7 @@ governance_rules:
   - Retrieval must filter by account, application, domain, and permission scope.
   - Corrections should create a new memory record or lifecycle transition.
   - Generated ARDS/SDD artifacts must reference source memory records.
+  - Memory records must not be treated as authoritative product records for SST.
 robots_context:
   discovery_source: CR-SST-0006
   current_state: runtime-partial
@@ -77,3 +101,4 @@ validation:
     - Robots discovery creates evidence and gap records, not server intents.
     - Retrieval candidates are filtered by account and application scope.
     - Workspace generation can cite source memory records.
+    - CR-SST-0021 tests cover governed records, phase runs, in-memory store idempotency, fake provider execution, visibility candidates, and orchestrator handoff payload mapping.
