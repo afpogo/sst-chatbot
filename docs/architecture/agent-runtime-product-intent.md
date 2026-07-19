@@ -91,6 +91,28 @@ Candidate output:
 
 This milestone turns the current infrastructure into a business workflow: request in, governed agent intent out.
 
+## Flujo interno actual
+
+La primera vertical independiente del transporte queda definida así:
+
+```text
+planned operation intent
+  -> deterministic operation policy
+  -> validated_for_handoff
+  -> transport-agnostic OrchestratorPort
+  -> fake review receipt
+  -> auditable local lifecycle snapshot
+```
+
+Este flujo prueba el límite interno de autoridad sin seleccionar HTTP, queue o
+worker. Un receipt fake `accepted_for_review` deja el lifecycle en
+`handoff_requested`; sólo un futuro receipt real del orquestador que acepte la
+responsabilidad de ejecución puede avanzar a `handoff_accepted`.
+
+La siguiente unidad interna conectará contexto de aplicación, catálogo privado
+de prompts, ejecución del provider y un `agent_creation_intent` estructurado
+con este camino de handoff validado.
+
 ## Success Metrics
 The product should be evaluated by:
 - time from request to validated intent;

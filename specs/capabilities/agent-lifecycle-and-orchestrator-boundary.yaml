@@ -52,6 +52,42 @@ agent_lifecycle:
     - completed
     - failed
     - rejected
+  transitions:
+    requested: [classified, rejected, failed]
+    classified: [planned, rejected, failed]
+    planned: [validated_for_handoff, rejected, failed]
+    validated_for_handoff: [handoff_requested, rejected, failed]
+    handoff_requested: [handoff_accepted, rejected, failed]
+    handoff_accepted: [completed, failed]
+    completed: []
+    failed: []
+    rejected: []
+  implementation_refs:
+    - src/app/agents/lifecycle.py
+    - src/app/orchestrator/port.py
+    - src/app/orchestrator/service.py
+  fake_receipt_mapping:
+    stays_handoff_requested:
+      - received
+      - accepted_for_review
+      - duplicate
+    becomes_rejected:
+      - rejected_by_policy
+      - conflict
+    rules:
+      - "A fake receipt never advances lifecycle to handoff_accepted."
+      - "Only an external orchestrator receipt that accepts execution ownership may advance to handoff_accepted."
+  external_ownership_acceptance:
+    required_status: execution_ownership_accepted
+    required_fields:
+      - receipt_id
+      - correlation_id
+      - accepted_by
+      - evidence_ref
+      - accepted_at
+    rules:
+      - "The receipt must already be recorded in the local lifecycle observations."
+      - "accepted_for_review and every other fake status cannot accept execution ownership."
 operation_intent:
   required: true
   rules:
@@ -110,14 +146,36 @@ handoff_payload:
     - idempotency_key
     - correlation_id
     - audit_metadata
+  conditional_review_evidence:
+    required_for:
+      - workspace.apply_patch
+    fields:
+      - reviewer
+      - reason
+      - evidence_ref
+      - reviewed_at
+  receipt_binding:
+    required_matches:
+      - operation_intent_id
+      - capability_id
+      - tenant_id
+      - user_id
+      - idempotency_key
+      - correlation_id
+      - audit_metadata
+      - payload_fingerprint
+      - review_evidence
 local_fake_orchestrator_adapter:
   status: implemented-local
   request_id: CR-SST-0022
   implementation_refs:
+    - src/app/operation_policy.py
     - src/app/orchestrator/types.py
     - src/app/orchestrator/validation.py
     - src/app/orchestrator/store.py
     - src/app/orchestrator/fake_client.py
+    - src/app/orchestrator/port.py
+    - src/app/orchestrator/service.py
   allowed_statuses:
     - received
     - accepted_for_review

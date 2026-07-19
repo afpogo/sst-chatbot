@@ -46,6 +46,10 @@ sync_streams:
       - src/app/orchestrator/types.py
       - src/app/orchestrator/validation.py
       - src/app/orchestrator/fake_client.py
+      - src/app/orchestrator/port.py
+      - src/app/orchestrator/service.py
+      - src/app/agents/lifecycle.py
+      - src/app/operation_policy.py
     required_fields:
       - operation_intent_id
       - capability_id
@@ -76,10 +80,23 @@ rules:
   - User workspace documentation can be indexed only after sync metadata and manifest eligibility are validated.
   - The local fake orchestrator adapter remains test infrastructure until a real transport is defined.
   - Contract drift must be recorded by updating specs/ards/contract-binding.yaml before changing runtime behavior.
+known_contract_drift:
+  - id: orchestrator-inbound-server-operation-list
+    status: blocked-local
+    description: >
+      The current control-plane inbound draft lists server.refresh_cache and
+      server.restart_service, while the producer contract keeps both operations
+      future-blocked. The local producer allowlist remains authoritative until
+      a future control-plane reconciliation removes the mismatch.
+    local_enforcement:
+      - src/app/operation_policy.py
+      - tests/test_operation_policy.py
 validation:
   expected_checks:
     - ARDS core binding contains the resolved core contract version and core ref.
     - Orchestrator handoff payloads include idempotency and audit metadata.
+    - Review-required operations preserve typed review evidence through the port and receipt.
+    - Receipts are bound to the submitted payload fingerprint and correlation context.
     - Retriever-ingested user workspace documents carry source tier and sync revision.
     - Server operation intents remain blocked unless approved by orchestrator policy.
 related_docs:
@@ -93,3 +110,4 @@ related_specs:
   - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
   - specs/capabilities/retrieval-augmented-generation.yaml
   - specs/capabilities/retriever-strategies.yaml
+  - specs/integration/control-plane-link.yaml

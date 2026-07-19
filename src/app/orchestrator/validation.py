@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
+from app.operation_policy import HANDOFF_CAPABILITY_ID
+from app.operation_policy import evaluate_operation
 from app.orchestrator.types import HandoffDecision
 from app.orchestrator.types import HandoffIssue
 from app.orchestrator.types import HandoffPayload
-
-BLOCKED_OPERATIONS = {"server.restart_service", "server.refresh_cache"}
-HUMAN_REVIEW_REQUIRED_OPERATIONS = {"workspace.apply_patch"}
-
 
 def validate_handoff_payload(
     payload: HandoffPayload,
@@ -33,6 +29,14 @@ def validate_handoff_payload(
                 )
             )
 
+    if payload.capability_id and payload.capability_id != HANDOFF_CAPABILITY_ID:
+        issues.append(
+            HandoffIssue(
+                code="unsupported_capability",
+                message=f"{payload.capability_id} is not the configured handoff capability",
+            )
+        )
+
     audit = payload.audit_metadata
     for field_name in ("origin_service", "created_at", "created_by", "reason"):
         if not audit.get(field_name):
@@ -43,24 +47,20 @@ def validate_handoff_payload(
                 )
             )
 
-    requested_operation = _requested_operation(payload.payload)
-    if requested_operation in BLOCKED_OPERATIONS:
+    operation_decision = evaluate_operation(
+        payload.payload.get("requested_operation"),
+        human_reviewed=human_reviewed,
+    )
+    if not operation_decision.accepted:
         issues.append(
             HandoffIssue(
-                code="blocked_operation",
-                message=f"{requested_operation} is blocked for local fake handoff",
-            )
-        )
-
-    if (
-        requested_operation in HUMAN_REVIEW_REQUIRED_OPERATIONS
-        and not human_reviewed
-    ):
-        issues.append(
-            HandoffIssue(
-                code="human_review_required",
-                message=f"{requested_operation} requires human review",
-                severity="manual-review",
+                code=operation_decision.code,
+                message=operation_decision.message,
+                severity=(
+                    "manual-review"
+                    if operation_decision.code == "human_review_required"
+                    else "error"
+                ),
             )
         )
 
@@ -72,10 +72,3 @@ def validate_handoff_payload(
         )
 
     return HandoffDecision(accepted=True, status="accepted_for_review")
-
-
-def _requested_operation(payload: dict[str, Any]) -> str:
-    value = payload.get("requested_operation")
-    if isinstance(value, str):
-        return value
-    return ""

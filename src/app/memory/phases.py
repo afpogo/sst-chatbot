@@ -61,6 +61,9 @@ class PhaseRunner:
         *,
         human_reviewed: bool = False,
     ) -> PhaseRunResult:
+        if not input_records:
+            raise ValueError("phase requires at least one input record")
+
         definition = DEFAULT_PHASES[phase_name]
         validation = self._validate_inputs(definition, input_records, human_reviewed)
 

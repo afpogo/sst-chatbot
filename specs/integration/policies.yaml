@@ -1,30 +1,55 @@
 schema_version: "1.0"
-version: 1
+version: 2
 kind: "ards_sdd_agent_policy_registry"
 status: "active"
-updated_at: "2026-06-13"
+updated_at: "2026-07-13"
 purpose: >
-  Local adoption registry for the canonical ARDS/SDD agent operating policies
-  inherited from `4uentes-ards-core`.
+  Local adoption registry for the canonical ARDS/SDD common policy runtime
+  inherited from 4uentes-ards-core. Current changes remain pending a new
+  reconciliation through 4uentes-orchestor.
 
 standard_source:
   repo: "4uentes-ards-core"
   registry: "specs/integration/policies.yaml"
+  core_contract_version: "ards-core-contract-v0.1"
   core_ref: "4uentes-ards-core@2ad4e0f"
+  policy_runtime: "common-policy-runtime"
+  policy_runtime_revision: "2026-07-11-codex-gpt-5.6-resource-extension"
+  policy_runtime_ref: "4uentes-orchestor:requests/done/CR-CP-0016-codex-model-selection-resource-extension.yaml"
+  policy_runtime_source_status: "pending-immutable-core-ref"
   adoption_mode: "scoped-local-adoption"
+  note: >
+    The contract version remains pinned until core publishes a new resolved
+    contract. Living policy adoption is tracked independently from that pin.
 
 provider_model:
-  provider_agnostic: true
+  provider_agnostic: false
+  provider_scope: "codex"
   model_names_are_aliases: true
   alias_resolution: "repo-local-configured"
+  resource_signal:
+    allowed_levels: ["very-low", "low", "normal", "high"]
+    default_level: "normal"
+    allowed_sources: ["default", "manual", "runtime"]
   required_alias_slots:
+    - "normal_and_high_resources"
     - "fast_verifiable_task"
     - "long_context_task"
     - "high_reasoning_task"
+  aliases:
+    normal_and_high_resources: "gpt-5.6-sol"
+    fast_verifiable_task: "gpt-5.3-spark"
+    long_context_task: "gpt-5.4-fast-high"
+    high_reasoning_task: "gpt-5.5"
+  fallback_rule: >
+    Treat unavailable preferred capacity as resource degradation, record the
+    fallback, and never silently downgrade sensitive work.
 
 local_adoption:
   repo: "sst-chatbot"
   project_type: "backend-api"
+  adoption_completeness: "local-complete-pending-control-plane-reconciliation"
+  reconciliation_status: "pending"
   discovery:
     agents_entrypoint: "AGENTS.md"
     policy_index: "specs/policies/00-index.yaml"
@@ -33,42 +58,62 @@ local_adoption:
     command: ".\\.venv\\Scripts\\python.exe scripts\\check.py"
 
 policies:
+  - id: "http-qa-harness-policy"
+    policy_class: "core-profile-scoped"
+    adoption_status: "exception"
+    applicability_status: "not-applicable"
+    manifest: "specs/policies/http-qa-harness-policy.yaml"
+    rationale: "The repo does not own an HTTP surface or runtime transport yet."
   - id: "agent-model-selection-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-model-selection-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-model-selection-policy.yaml"
   - id: "agent-resource-degradation-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-resource-degradation-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-resource-degradation-policy.yaml"
   - id: "agent-task-atomization-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-task-atomization-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-task-atomization-policy.yaml"
   - id: "agent-delegation-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-delegation-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-delegation-policy.yaml"
   - id: "agent-context-management-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-context-management-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-context-management-policy.yaml"
   - id: "agent-architecture-boundary-policy"
-    source_repo: "4uentes-ards-core"
-    source_registry: "specs/integration/policies.yaml"
-    source_human_doc: "docs/policies/agent-architecture-boundary-policy.md"
+    policy_class: "core-general"
     adoption_status: "adopted"
-    human_doc: "docs/policies/README.md"
+    manifest: "specs/policies/agent-architecture-boundary-policy.yaml"
+  - id: "human-doc-language"
+    policy_class: "core-general"
+    adoption_status: "adopted"
+    manifest: "specs/policies/human-doc-language.yaml"
+  - id: "owner-documentation-authority-policy"
+    policy_class: "core-general"
+    adoption_status: "adopted"
+    manifest: "specs/policies/owner-documentation-authority-policy.yaml"
+  - id: "control-plane-link-policy"
+    policy_class: "core-profile-scoped"
+    adoption_status: "adopted"
+    manifest: "specs/policies/control-plane-link-policy.yaml"
+    local_aliases:
+      - local_alias: "orchestrator_link"
+        maps_to: "control_plane_link"
+
+adoption_manifests:
+  path: "specs/policies/"
+  index: "specs/policies/00-index.yaml"
+
+exceptions:
+  - policy_id: "http-qa-harness-policy"
+    status: "exception-open"
+    applicability_status: "not-applicable"
+    closure_trigger: "An approved runtime transport gives this repo HTTP ownership."
+    related_request: "CR-SST-0083"
 
 gaps: []
 validation:

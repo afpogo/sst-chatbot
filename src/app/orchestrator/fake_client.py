@@ -7,6 +7,7 @@ from app.orchestrator.types import HandoffDecision
 from app.orchestrator.types import HandoffIssue
 from app.orchestrator.types import HandoffPayload
 from app.orchestrator.types import HandoffReceipt
+from app.orchestrator.types import ReviewEvidence
 from app.orchestrator.validation import validate_handoff_payload
 
 
@@ -18,7 +19,7 @@ class FakeOrchestratorClient:
         self,
         payload: HandoffPayload | dict[str, object],
         *,
-        human_reviewed: bool = False,
+        review_evidence: ReviewEvidence | None = None,
     ) -> HandoffReceipt:
         resolved_payload = (
             payload if isinstance(payload, HandoffPayload) else HandoffPayload(**payload)
@@ -50,13 +51,19 @@ class FakeOrchestratorClient:
                         ),
                     ),
                 ),
+                review_evidence=review_evidence,
             )
 
         decision = validate_handoff_payload(
             resolved_payload,
-            human_reviewed=human_reviewed,
+            human_reviewed=review_evidence is not None,
         )
-        receipt = _receipt(resolved_payload, fingerprint, decision)
+        receipt = _receipt(
+            resolved_payload,
+            fingerprint,
+            decision,
+            review_evidence=review_evidence,
+        )
         if decision.accepted:
             self.store.append(receipt)
         return receipt
@@ -66,6 +73,7 @@ def _receipt(
     payload: HandoffPayload,
     fingerprint: str,
     decision: HandoffDecision,
+    review_evidence: ReviewEvidence | None = None,
 ) -> HandoffReceipt:
     return HandoffReceipt(
         receipt_id=f"fake-orchestrator-receipt-{payload.idempotency_key}",
@@ -77,6 +85,7 @@ def _receipt(
         idempotency_key=payload.idempotency_key,
         correlation_id=payload.correlation_id,
         audit_metadata=payload.audit_metadata,
+        review_evidence=review_evidence,
         decision=decision,
         payload_fingerprint=fingerprint,
     )

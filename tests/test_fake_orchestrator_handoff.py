@@ -7,6 +7,7 @@ from app.memory import OperationalRecord
 from app.memory import stable_body_hash
 from app.memory import to_handoff_payload
 from app.orchestrator import FakeOrchestratorClient
+from app.orchestrator import ReviewEvidence
 
 
 def make_payload(
@@ -104,10 +105,32 @@ def test_workspace_apply_patch_requires_human_review() -> None:
     payload = make_payload(operation="workspace.apply_patch")
 
     rejected = client.submit(payload)
-    accepted = client.submit(payload, human_reviewed=True)
+    accepted = client.submit(
+        payload,
+        review_evidence=ReviewEvidence(
+            reviewer="pytest",
+            reason="approved test patch",
+            evidence_ref="review-1",
+        ),
+    )
 
     assert rejected.status == "rejected_by_policy"
     assert "human_review_required" in {
         issue.code for issue in rejected.decision.issues
     }
     assert accepted.status == "accepted_for_review"
+
+
+@pytest.mark.parametrize("operation", ["", "totally.unknown"])
+def test_missing_or_unknown_operations_are_rejected(operation: str) -> None:
+    payload = make_payload()
+    payload["payload"]["requested_operation"] = operation
+
+    receipt = FakeOrchestratorClient().submit(payload)
+
+    assert receipt.status == "rejected_by_policy"
+    assert receipt.decision.accepted is False
+    assert receipt.decision.issues[0].code in {
+        "missing_requested_operation",
+        "unsupported_operation",
+    }

@@ -38,7 +38,11 @@ def make_record(
             created_by="pytest",
             reason="unit test",
         ),
-        payload={"priority": "normal", "requested_retry_policy": "none"},
+        payload={
+            "requested_operation": "workspace.generate_bundle",
+            "priority": "normal",
+            "requested_retry_policy": "none",
+        },
     )
 
 
@@ -79,7 +83,10 @@ def test_in_memory_store_indexes_correlation_and_handles_idempotency() -> None:
     conflicting = make_record("intent-3").model_copy(
         update={
             "idempotency_key": first.idempotency_key,
-            "payload": {"priority": "urgent"},
+            "payload": {
+                "requested_operation": "workspace.generate_bundle",
+                "priority": "urgent",
+            },
         }
     )
 

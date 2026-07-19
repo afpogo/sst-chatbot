@@ -3,7 +3,7 @@ version: "0.1.0"
 kind: "ards_child_contract_binding"
 repo_id: "sst-chatbot"
 project_type: "backend-api"
-updated_at: "2026-06-21"
+updated_at: "2026-07-13"
 core_contract:
   tool: "ards.get_sync_contract"
   requested_contract_version: "latest"
@@ -17,11 +17,18 @@ core_contract:
     - "agent-delegation-policy"
     - "agent-context-management-policy"
     - "agent-architecture-boundary-policy"
+    - "human-doc-language"
+    - "owner-documentation-authority-policy"
+    - "control-plane-link-policy"
+  policy_runtime_revision: "2026-07-11-codex-gpt-5.6-resource-extension"
+  policy_exception_ids:
+    - "http-qa-harness-policy"
 orchestrator:
   id: "4uentes-orchestor"
   sync_role: "execution-handoff-authority"
   last_validated_at: "2026-06-21"
-  last_report_ref: "evidence/requests/CR-SST-0077/sst-chatbot-child-sync-diff.yaml"
+  last_report_ref: "4uentes-orchestor:evidence/requests/CR-SST-0082/sst-chatbot-child-sync-diff.yaml"
+  control_plane_link: "specs/integration/control-plane-link.yaml"
   local_boundary_spec: "specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml"
 sync_contracts:
   - id: "sst-chatbot-core-orchestrator-sync"
