@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+from app.memory.types import OperationalRecord
+from app.memory.types import ValidationIssue
+from app.memory.types import ValidationResult
+from app.memory.types import stable_body_hash
+from app.operation_policy import HANDOFF_CAPABILITY_ID
+from app.operation_policy import evaluate_operation
+
+
+def validate_record(record: OperationalRecord) -> ValidationResult:
+    issues: list[ValidationIssue] = []
+
+    required_fields = (
+        ("id", record.id),
+        ("correlation_id", record.correlation_id),
+        ("idempotency_key", record.idempotency_key),
+        ("producer", record.producer),
+        ("audit_metadata.origin_service", record.audit_metadata.origin_service),
+        ("audit_metadata.created_by", record.audit_metadata.created_by),
+        ("audit_metadata.reason", record.audit_metadata.reason),
+    )
+
+    for field_name, value in required_fields:
+        if not value:
+            issues.append(
+                ValidationIssue(
+                    code="missing_required_field",
+                    message=f"{field_name} is required",
+                    record_id=record.id,
+                )
+            )
+
+    if not record.tenant_id and not record.scope:
+        issues.append(
+            ValidationIssue(
+                code="missing_scope",
+                message="tenant_id or scope is required",
+                record_id=record.id,
+            )
+        )
+
+    if record.body:
+        expected_hash = stable_body_hash(record.body)
+        if not record.body_hash:
+            issues.append(
+                ValidationIssue(
+                    code="missing_body_hash",
+                    message="body_hash is required when body is present",
+                    record_id=record.id,
+                )
+            )
+        elif record.body_hash != expected_hash:
+            issues.append(
+                ValidationIssue(
+                    code="body_hash_mismatch",
+                    message="body_hash must match the canonical body hash",
+                    record_id=record.id,
+                )
+            )
+
+    if record.visibility and "downloadable" in record.visibility:
+        if "user_visible" not in record.visibility:
+            issues.append(
+                ValidationIssue(
+                    code="invalid_visibility",
+                    message="downloadable records must also be user_visible",
+                    record_id=record.id,
+                )
+            )
+
+    if (
+        record.record_type == "intent"
+        and record.capability_id == HANDOFF_CAPABILITY_ID
+    ):
+        operation_decision = evaluate_operation(
+            record.payload.get("requested_operation"),
+            human_reviewed=True,
+        )
+    else:
+        operation_decision = None
+
+    if operation_decision is not None and not operation_decision.accepted:
+        issues.append(
+            ValidationIssue(
+                code=operation_decision.code,
+                message=operation_decision.message,
+                record_id=record.id,
+            )
+        )
+
+    return ValidationResult(accepted=not issues, issues=tuple(issues))
+
+
+def require_valid_record(record: OperationalRecord) -> None:
+    result = validate_record(record)
+    if not result.accepted:
+        messages = "; ".join(issue.message for issue in result.issues)
+        raise ValueError(messages)

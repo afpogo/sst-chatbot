@@ -62,26 +62,6 @@ Notes:
 - Keep internal ARDS/SDD knowledge separate from generated user ARDS/SDD workspaces.
 - Do not let agent output become files directly; use structured intent plus deterministic backend validation.
 
-## Model and Subagent Selection Annex
-This repo has an operational annex for model and subagent selection:
-
-- `docs/playbooks/model-selection-policy.md`
-
-Before planning or executing a task, agents must classify it as:
-
-- `short-defined-task`
-- `long-context-task`
-- `complex-high-risk-task`
-
-Then apply the policy defined in the ARDS/SDD annex. This rule complements the
-existing ARDS/SDD; it does not replace working agreements, specs, docs,
-playbooks, capabilities, handoffs, or current repository decisions.
-
-For planned work, the classification must produce an auditable `task_weight`,
-`model_selection`, and `subagent_deployment_plan` decision. If the policy
-requires subagents and the runtime cannot spawn them, record the fallback in the
-plan or evidence before continuing.
-
 ## POC Rules
 - Put notebooks under `labs/notebooks/`.
 - Put non-notebook experiments under `labs/experiments/`.
@@ -101,3 +81,31 @@ plan or evidence before continuing.
 - Keep `.env` local and rotate exposed credentials immediately.
 - Document required variables with placeholder values only.
 - Treat debug logs, caches, notebook checkpoints, and virtual environments as generated state.
+
+## Agent Operating Policies
+
+Before planning or executing a task, agents must review and apply the adopted ARDS/SDD operating policies for this repo.
+
+Registry principal:
+
+- `specs/integration/policies.yaml`
+
+Human-readable policy entrypoint:
+
+- `docs/policies/README.md`
+
+Inherited policies:
+
+- `agent-model-selection-policy`
+- `agent-resource-degradation-policy`
+- `agent-task-atomization-policy`
+- `agent-delegation-policy`
+- `agent-context-management-policy`
+- `agent-architecture-boundary-policy`
+- `human-doc-language`
+- `owner-documentation-authority-policy`
+- `control-plane-link-policy`
+- `http-qa-harness-policy` (`exception-open`/`not-applicable` hasta que exista una superficie HTTP propia)
+
+These policies are inherited from `4uentes-ards-core` and adopted locally through scoped manifests. They complement local specs, docs, capabilities, handoffs, and working agreements. They do not replace functional contracts, ownership, or product architecture.
+

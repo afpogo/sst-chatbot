@@ -1,6 +1,6 @@
 version: 1
 kind: ards_sdd_index
-repository: sst_chatbot
+repository: sst-chatbot
 description: Agent integration repository for SST and future applications.
 entries:
   architecture:
@@ -48,8 +48,14 @@ entries:
       path: specs/capabilities/prompt-catalog-and-versioning.yaml
       status: draft
   integrations:
+    - id: control-plane-link
+      path: specs/integration/control-plane-link.yaml
+      status: draft
     - id: sst-agent-feed
       path: specs/integrations/sst-agent-feed.yaml
+      status: draft
+    - id: sst-chatbot-core-orchestrator-sync
+      path: specs/integrations/sst-chatbot-core-orchestrator-sync.yaml
       status: draft
     - id: plaud-sst-orchestrator-derivations
       path: specs/integrations/plaud-sst-orchestrator-derivations.yaml
@@ -72,13 +78,21 @@ entries:
       status: active
     - id: agent-lifecycle-orchestrator-boundary-poc
       path: specs/pocs/agent-lifecycle-orchestrator-boundary-poc.yaml
-      status: draft
+      status: active
     - id: user-activity-ards-memory-poc
       path: specs/pocs/user-activity-ards-memory-poc.yaml
       status: draft
     - id: application-context-connector-poc
       path: specs/pocs/application-context-connector-poc.yaml
       status: draft
+  states:
+    - id: agent-runtime-core-v1
+      path: specs/states/agent-runtime-core-v1.yaml
+      status: in-progress
+policies:
+  index: "specs/policies/00-index.yaml"
+  registry: "specs/integration/policies.yaml"
+  docs: "docs/policies/README.md"
 templates:
   - path: specs/templates/feature.template.yaml
   - path: specs/templates/poc.template.yaml
