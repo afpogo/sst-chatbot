@@ -1,0 +1,46 @@
+version: 1
+kind: capability
+id: sst-stakeholder-insights
+status: active
+title: SST stakeholder insights
+goal: Explain approved global SST metrics without exposing tenants, people, conversations, contracts, or raw records.
+owner: sst-chatbot
+audience: sst_stakeholder
+identity_authority: sst_backend
+execution_authority: none
+contracts:
+  - MetricQuery
+  - MetricSnapshot
+  - StakeholderMetricsPort
+approved_source: approved_analytics
+allowed_classifications: [public, derived_safe]
+metric_catalog:
+  - active_accounts
+  - active_users
+  - new_accounts
+  - retention_rate
+  - operation_volume
+  - module_adoption
+granularity: monthly
+minimum_cohort_size: 10
+dimensions:
+  module_adoption: [module_id]
+free_filters_allowed: false
+tenant_drill_down_allowed: false
+raw_records_allowed: false
+read_only: true
+handoff_created: false
+adapter:
+  current: fake-local
+  real_api_or_database: false
+local_implementation:
+  status: implemented-local
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/metrics.py
+    - src/app/audience_access/runtime.py
+  tests:
+    - tests/test_audience_access.py
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py

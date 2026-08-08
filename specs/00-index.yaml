@@ -13,6 +13,9 @@ entries:
     - id: agent-runtime-product-intent
       path: specs/architecture/agent-runtime-product-intent.yaml
       status: draft
+    - id: audience-safe-disclosure
+      path: specs/architecture/audience-safe-disclosure.yaml
+      status: accepted
   capabilities:
     - id: provider-abstraction
       path: specs/capabilities/provider-abstraction.yaml
@@ -47,16 +50,28 @@ entries:
     - id: prompt-catalog-and-versioning
       path: specs/capabilities/prompt-catalog-and-versioning.yaml
       status: draft
+    - id: audience-aware-context-governance
+      path: specs/capabilities/audience-aware-context-governance.yaml
+      status: active
+    - id: sst-user-assistant
+      path: specs/capabilities/sst-user-assistant.yaml
+      status: active
+    - id: sst-stakeholder-insights
+      path: specs/capabilities/sst-stakeholder-insights.yaml
+      status: active
   integrations:
     - id: control-plane-link
       path: specs/integration/control-plane-link.yaml
-      status: draft
+      status: active
+    - id: sst-chatbot-audience-capability-links
+      path: specs/integration/capability-links.yaml
+      status: active
     - id: sst-agent-feed
       path: specs/integrations/sst-agent-feed.yaml
       status: draft
     - id: sst-chatbot-core-orchestrator-sync
       path: specs/integrations/sst-chatbot-core-orchestrator-sync.yaml
-      status: draft
+      status: active
     - id: plaud-sst-orchestrator-derivations
       path: specs/integrations/plaud-sst-orchestrator-derivations.yaml
       status: draft
@@ -88,6 +103,9 @@ entries:
   states:
     - id: agent-runtime-core-v1
       path: specs/states/agent-runtime-core-v1.yaml
+      status: in-progress
+    - id: sst-chatbot-audience-access-v1
+      path: specs/states/sst-chatbot-audience-access-v1.yaml
       status: in-progress
 policies:
   index: "specs/policies/00-index.yaml"

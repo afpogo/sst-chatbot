@@ -33,4 +33,7 @@ orchestrator:
 sync_contracts:
   - id: "sst-chatbot-core-orchestrator-sync"
     path: "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
-    status: "draft"
+    status: "active"
+  - id: "sst-chatbot-audience-capability-links"
+    path: "specs/integration/capability-links.yaml"
+    status: "active"
