@@ -9,6 +9,8 @@ business_thesis: SST needs governed agents that convert operational context into
 repository_role:
   owns:
     - application context normalization
+    - audience-aware context governance
+    - deterministic disclosure validation
     - governed memory contracts
     - private prompt management
     - provider and model abstraction
@@ -16,12 +18,17 @@ repository_role:
     - structured intent generation
     - local deterministic validation before handoff
   does_not_own:
+    - SST identity, entitlements, metric definitions, or metric calculation
     - production server execution
     - direct infrastructure mutation from model output
     - unrestricted autonomous agents
     - LangSmith-owned prompt storage
     - raw chat history as durable memory
 priority_use_cases:
+  - id: sst-user-assistant
+    value: Answer read-only requests with authorized and minimized context from the caller's exact SST scope.
+  - id: sst-stakeholder-insights
+    value: Explain approved global SST metrics without exposing tenants, people, or raw business records.
   - id: plaud-transcript-derivations
     value: Convert transcripts into decisions, tasks, gaps, specs, and memory candidates.
   - id: agent-creation-on-demand
@@ -34,12 +41,30 @@ priority_use_cases:
     value: Delegate execution to 4uentes-orchestor or a future ARDS/SDD orchestrator.
 strategic_layers:
   - application_context
+  - principal_and_access_policy
   - memory_layer
   - prompt_layer
   - provider_layer
   - agent_lifecycle
   - intent_layer
   - orchestrator_boundary
+audience_governance:
+  principal_contract: PrincipalContext
+  identity_authority: sst_backend
+  audiences: [sst_user, sst_stakeholder]
+  safe_data_products:
+    - source: sst_backend
+      audience: sst_user
+      scope: exact_tenant_user_application
+    - source: approved_analytics
+      audience: sst_stakeholder
+      scope: global_aggregate_only
+  disclosure_metadata:
+    - audience
+    - policy_version
+    - decision_code
+    - contains_business_data
+  orchestrator_visibility: capability_maturity_only
 next_milestone:
   id: agent-runtime-core-v1
   focus: agent_creation_intent
@@ -80,7 +105,10 @@ brainstorming_filters:
 validation:
   documents:
     - docs/architecture/agent-runtime-product-intent.md
+    - docs/architecture/audience-safe-disclosure.md
   related_specs:
+    - specs/architecture/audience-safe-disclosure.yaml
+    - specs/capabilities/audience-aware-context-governance.yaml
     - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
     - specs/capabilities/prompt-catalog-and-versioning.yaml
     - specs/capabilities/user-activity-ards-memory.yaml

@@ -132,3 +132,21 @@ Future brainstorming should be evaluated against the product thesis:
 - Does it preserve ARDS/SDD traceability?
 
 Ideas that only add model features, provider variety, or prompt complexity without improving these outcomes should remain secondary.
+
+## Audiencias y divulgación segura
+
+El runtime compartido admite dos audiencias V1 sin mezclar sus permisos:
+`sst_user` usa contexto propio autorizado y `sst_stakeholder` usa exclusivamente
+métricas globales agregadas. `PrincipalContext`, afirmado por el backend SST, es
+la única fuente de audiencia, scope y entitlements; ningún prompt puede cambiar
+esos datos.
+
+La capa previa al provider valida fuente, clasificación y scope, y minimiza los
+campos autorizados. La capa posterior valida claims contra snapshots aprobados y
+bloquea identificadores o credenciales. Las lecturas no producen handoff. El
+orquestador sólo puede recibir evidencia técnica de capabilities con
+`execution_authority: none` y `contains_business_data: false`.
+
+La decisión detallada está en
+`docs/architecture/audience-safe-disclosure.md` y su contrato machine-readable
+en `specs/architecture/audience-safe-disclosure.yaml`.

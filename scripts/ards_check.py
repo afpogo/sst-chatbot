@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -16,6 +17,8 @@ REQUIRED_PATHS = [
     "docs/00-overview.md",
     "docs/architecture/provider-agnostic-agents.md",
     "docs/architecture/agent-runtime-product-intent.md",
+    "docs/architecture/audience-safe-disclosure.md",
+    "docs/architecture/control-plane-capability-links.md",
     "docs/adr/0001-adopt-ards-sdd.md",
     "docs/adr/0001-python-agentic-project-structure.md",
     "docs/adr/0002-provider-model-memory-configuration.md",
@@ -25,6 +28,7 @@ REQUIRED_PATHS = [
     "docs/playbooks/04-configure-provider-model-memory.md",
     "docs/playbooks/05-author-and-validate-prompts.md",
     "docs/adr/0003-private-prompt-engine.md",
+    "docs/adr/0004-audience-safe-disclosure.md",
     "docs/architecture/private-prompt-engine.md",
     "docs/pocs/README.md",
     "docs/tasks/README.md",
@@ -34,15 +38,21 @@ REQUIRED_PATHS = [
     "specs/architecture/python-agentic-structure.yaml",
     "specs/architecture/provider-model-memory-configuration.yaml",
     "specs/architecture/agent-runtime-product-intent.yaml",
+    "specs/architecture/audience-safe-disclosure.yaml",
     "specs/ards/contract-binding.yaml",
     "specs/integration/policies.yaml",
     "specs/integration/control-plane-link.yaml",
+    "specs/integration/capability-links.yaml",
     "specs/policies/00-index.yaml",
     "docs/policies/README.md",
     "docs/ai/policy.md",
     "specs/capabilities/prompt-catalog-and-versioning.yaml",
     "specs/capabilities/provider-abstraction.yaml",
+    "specs/capabilities/audience-aware-context-governance.yaml",
+    "specs/capabilities/sst-user-assistant.yaml",
+    "specs/capabilities/sst-stakeholder-insights.yaml",
     "specs/integrations/sst-agent-feed.yaml",
+    "specs/states/sst-chatbot-audience-access-v1.yaml",
     "specs/templates/feature.template.yaml",
     "specs/templates/poc.template.yaml",
     "specs/templates/state-scenario.template.yaml",
@@ -76,6 +86,21 @@ def load_yaml(path: Path) -> dict:
     if not isinstance(data, dict):
         raise ValueError("YAML root must be an object")
     return data
+
+
+def capability_movement_digest(owner_ref: str, evidence_ref: str) -> str:
+    owner = load_yaml(ROOT_DIR / owner_ref)
+    local_implementation = owner.get("local_implementation", {})
+    refs = {owner_ref, evidence_ref}
+    refs.update(local_implementation.get("code", []))
+    refs.update(local_implementation.get("tests", []))
+    digest = sha256()
+    for ref in sorted(refs):
+        digest.update(ref.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update((ROOT_DIR / ref).read_bytes())
+        digest.update(b"\0")
+    return f"sha256:{digest.hexdigest()}"
 
 
 def validate_yaml_files() -> list[str]:
@@ -372,6 +397,8 @@ def validate_control_plane_link() -> list[str]:
         errors.append("control_plane_link has an unexpected authority repo")
     if data.get("capability_id") != "capability.inbound.sst-chatbot-agent-handoff":
         errors.append("control_plane_link capability id mismatch")
+    if link.get("status") != "active":
+        errors.append("control_plane_link must be active")
     if link.get("status") == "active" and "TODO" in str(data.get("request_id", "")):
         errors.append("An active control_plane_link cannot have a TODO request id")
     evidence = data.get("evidence_ref", {})
@@ -379,9 +406,235 @@ def validate_control_plane_link() -> list[str]:
         path = evidence.get("path", "")
         if not path or not (ROOT_DIR / path).exists():
             errors.append("control_plane_link local evidence does not exist")
+    child_evidence = data.get("child_capability_evidence_ref", {})
+    if child_evidence.get("scope") != "local":
+        errors.append("control_plane_link child capability evidence must be local")
+    child_evidence_path = child_evidence.get("path", "")
+    if not child_evidence_path or not (ROOT_DIR / child_evidence_path).exists():
+        errors.append("control_plane_link child capability evidence does not exist")
+    capability_links = data.get("capability_links_ref", {})
+    if capability_links.get("scope") != "local":
+        errors.append("control_plane_link capability links must be local owner evidence")
+    capability_links_path = capability_links.get("path", "")
+    if not capability_links_path or not (ROOT_DIR / capability_links_path).exists():
+        errors.append("control_plane_link capability links do not exist")
     alias = link.get("alias", {})
     if alias.get("local_key") != "orchestrator_link" or alias.get("maps_to") != "control_plane_link":
         errors.append("control_plane_link local alias is invalid")
+    return errors
+
+
+def validate_capability_links() -> list[str]:
+    errors: list[str] = []
+    registry = load_yaml(ROOT_DIR / "specs" / "integration" / "capability-links.yaml")
+    expected_capability_ids = {
+        "audience-aware-context-governance",
+        "sst-user-assistant",
+        "sst-stakeholder-insights",
+    }
+    expected_parent_id = "capability.inbound.sst-chatbot-agent-handoff"
+    if registry.get("status") != "active":
+        errors.append("Audience capability link registry must be active")
+    control_plane = registry.get("control_plane", {})
+    if control_plane.get("repo") != "4uentes-orchestor":
+        errors.append("Capability link registry has an unexpected control-plane repo")
+    if control_plane.get("parent_capability_id") != expected_parent_id:
+        errors.append("Capability link registry parent capability mismatch")
+    activation = registry.get("activation", {})
+    if activation.get("status") != "active":
+        errors.append("Capability link registry activation must be active")
+    if activation.get("established_by_request") != "CR-SST-0082":
+        errors.append("Capability link registry must use the known establishment request")
+    pending = activation.get("capability_reconciliation", {})
+    if pending.get("request_id") is not None:
+        errors.append("Pending capability reconciliation must not invent a request id")
+
+    delivery = registry.get("delivery", {})
+    if delivery.get("mode") != "owner-manifest-pull":
+        errors.append("Capability links must use the approved owner manifest pull mode")
+    if delivery.get("checked_on_every_repository_gate") is not True:
+        errors.append("Capability links must be checked on every repository gate")
+    if delivery.get("automatic_remote_push") is not False:
+        errors.append("Capability links cannot claim an unimplemented remote push")
+    if not delivery.get("remote_push_blocker"):
+        errors.append("Capability links must document the remote push blocker")
+
+    links = registry.get("capability_links", [])
+    links_by_capability = {item.get("owner_capability_id"): item for item in links}
+    if set(links_by_capability) != expected_capability_ids or len(links) != len(
+        expected_capability_ids
+    ):
+        errors.append("Audience capability link inventory is incomplete or duplicated")
+
+    sync = load_yaml(
+        ROOT_DIR / "specs" / "integrations" / "sst-chatbot-core-orchestrator-sync.yaml"
+    )
+    stream = sync.get("sync_streams", {}).get("child_capability_evidence", {})
+    stream_by_capability = {
+        item.get("capability_id"): item for item in stream.get("capabilities", [])
+    }
+    if stream.get("status") != "active":
+        errors.append("Child capability evidence stream must be active")
+    if stream.get("capability_links_ref") != "specs/integration/capability-links.yaml":
+        errors.append("Child capability evidence stream link reference mismatch")
+
+    for capability_id in expected_capability_ids:
+        link = links_by_capability.get(capability_id, {})
+        owner_ref = link.get("owner_spec_ref", "")
+        if not owner_ref or not (ROOT_DIR / owner_ref).exists():
+            errors.append(f"Capability link owner spec does not exist: {capability_id}")
+            continue
+        owner = load_yaml(ROOT_DIR / owner_ref)
+        if owner.get("id") != capability_id:
+            errors.append(f"Capability link owner id mismatch: {capability_id}")
+        if owner.get("status") != link.get("owner_status"):
+            errors.append(f"Capability link owner status drift: {capability_id}")
+        if link.get("owner_status") != "active":
+            errors.append(f"Linked audience capability must be active: {capability_id}")
+        if link.get("control_plane_parent_capability_id") != expected_parent_id:
+            errors.append(f"Capability link parent mismatch: {capability_id}")
+        if link.get("execution_authority") != "none":
+            errors.append(f"Capability link has execution authority: {capability_id}")
+        if link.get("contains_business_data") is not False:
+            errors.append(f"Capability link contains business data: {capability_id}")
+        evidence_ref = link.get("evidence_ref", "")
+        if not evidence_ref or not (ROOT_DIR / evidence_ref).exists():
+            errors.append(f"Capability link evidence does not exist: {capability_id}")
+        elif link.get("movement_digest") != capability_movement_digest(
+            owner_ref,
+            evidence_ref,
+        ):
+            errors.append(f"Capability link movement digest is stale: {capability_id}")
+        stream_item = stream_by_capability.get(capability_id, {})
+        if stream_item.get("capability_status") != link.get("owner_status"):
+            errors.append(f"Capability evidence stream status drift: {capability_id}")
+        if stream_item.get("movement_digest") != link.get("movement_digest"):
+            errors.append(f"Capability evidence stream digest drift: {capability_id}")
+
+    return errors
+
+
+def validate_audience_access() -> list[str]:
+    errors: list[str] = []
+    capability_ids = {
+        "audience-aware-context-governance",
+        "sst-user-assistant",
+        "sst-stakeholder-insights",
+    }
+    capability_paths = {
+        capability_id: ROOT_DIR / "specs" / "capabilities" / f"{capability_id}.yaml"
+        for capability_id in capability_ids
+    }
+    capabilities = {
+        capability_id: load_yaml(path)
+        for capability_id, path in capability_paths.items()
+    }
+    specs_index = load_yaml(ROOT_DIR / "specs" / "00-index.yaml")
+    indexed_capabilities = {
+        item.get("id"): item
+        for item in specs_index.get("entries", {}).get("capabilities", [])
+    }
+    for capability_id, capability in capabilities.items():
+        if capability.get("status") != "active":
+            errors.append(f"Audience capability must be active: {capability_id}")
+        indexed = indexed_capabilities.get(capability_id, {})
+        if indexed.get("status") != "active":
+            errors.append(f"Audience capability index status mismatch: {capability_id}")
+        local = capability.get("local_implementation", {})
+        if local.get("status") != "implemented-local":
+            errors.append(f"Missing local implementation evidence: {capability_id}")
+        for evidence_group in ("code", "tests"):
+            for evidence_ref in local.get(evidence_group, []):
+                if not (ROOT_DIR / evidence_ref).exists():
+                    errors.append(f"Audience capability evidence does not exist: {evidence_ref}")
+
+    governance = capabilities["audience-aware-context-governance"]
+    expected_matrix = {
+        ("sst_user", "sst_backend"): {"public", "internal", "private"},
+        ("sst_stakeholder", "approved_analytics"): {"public", "derived_safe"},
+    }
+    actual_matrix: dict[tuple[str, str], set[str]] = {}
+    for row in governance.get("access_matrix", []):
+        key = (row.get("audience"), row.get("source"))
+        if key in actual_matrix:
+            errors.append(f"Duplicate audience access matrix row: {key}")
+        actual_matrix[key] = set(row.get("allowed_classifications", []))
+    if actual_matrix != expected_matrix:
+        errors.append("Audience classification and source matrix is not the V1 contract")
+    if governance.get("deny_by_default") is not True:
+        errors.append("Audience access policy must deny by default")
+    if set(governance.get("absolute_denials", [])) != {"restricted", "secret"}:
+        errors.append("restricted and secret must be absolute denials")
+
+    stakeholder = capabilities["sst-stakeholder-insights"]
+    expected_metrics = {
+        "active_accounts",
+        "active_users",
+        "new_accounts",
+        "retention_rate",
+        "operation_volume",
+        "module_adoption",
+    }
+    catalog = stakeholder.get("metric_catalog", [])
+    if set(catalog) != expected_metrics or len(catalog) != len(expected_metrics):
+        errors.append("Stakeholder metric catalog must contain the six unique V1 KPIs")
+    if stakeholder.get("granularity") != "monthly":
+        errors.append("Stakeholder metric granularity must be monthly")
+    if stakeholder.get("minimum_cohort_size") != 10:
+        errors.append("Stakeholder minimum cohort size must be 10")
+    if stakeholder.get("dimensions") != {"module_adoption": ["module_id"]}:
+        errors.append("module_id must be the only initial stakeholder dimension")
+    for forbidden_flag in (
+        "free_filters_allowed",
+        "tenant_drill_down_allowed",
+        "raw_records_allowed",
+    ):
+        if stakeholder.get(forbidden_flag) is not False:
+            errors.append(f"Stakeholder policy flag must be false: {forbidden_flag}")
+
+    state_path = ROOT_DIR / "specs" / "states" / "sst-chatbot-audience-access-v1.yaml"
+    state = load_yaml(state_path)
+    state_index = load_yaml(ROOT_DIR / "specs" / "states" / "00-index.yaml")
+    indexed_states = {item.get("id"): item for item in state_index.get("states", [])}
+    if state.get("status") != "in-progress":
+        errors.append("Audience feature state must be in-progress")
+    if indexed_states.get(state.get("id"), {}).get("status") != state.get("status"):
+        errors.append("Audience feature state index status mismatch")
+    evidence = state.get("evidence", {})
+    for evidence_group in ("code", "tests"):
+        for evidence_ref in evidence.get(evidence_group, []):
+            if not (ROOT_DIR / evidence_ref).exists():
+                errors.append(f"Audience feature evidence does not exist: {evidence_ref}")
+    tests_source = "\n".join(
+        (ROOT_DIR / evidence_ref).read_text(encoding="utf-8")
+        for evidence_ref in evidence.get("tests", [])
+    )
+    for test_case in evidence.get("test_cases", []):
+        if f"def {test_case}(" not in tests_source:
+            errors.append(f"Audience feature test evidence is stale: {test_case}")
+
+    sync = load_yaml(
+        ROOT_DIR / "specs" / "integrations" / "sst-chatbot-core-orchestrator-sync.yaml"
+    )
+    child_stream = sync.get("sync_streams", {}).get("child_capability_evidence", {})
+    child_evidence = child_stream.get("capabilities", [])
+    child_by_id = {item.get("capability_id"): item for item in child_evidence}
+    if set(child_by_id) != capability_ids or len(child_evidence) != len(capability_ids):
+        errors.append("Control-plane child capability inventory is incomplete or duplicated")
+    for capability_id in capability_ids:
+        item = child_by_id.get(capability_id, {})
+        if item.get("owner") != "sst-chatbot":
+            errors.append(f"Child capability owner mismatch: {capability_id}")
+        if item.get("local_status") != "implemented-local":
+            errors.append(f"Child capability local status mismatch: {capability_id}")
+        if item.get("execution_authority") != "none":
+            errors.append(f"Child capability must have no execution authority: {capability_id}")
+        if item.get("contains_business_data") is not False:
+            errors.append(f"Child capability evidence contains business data: {capability_id}")
+        for evidence_ref in item.get("evidence", []):
+            if not (ROOT_DIR / evidence_ref).exists():
+                errors.append(f"Child capability evidence does not exist: {evidence_ref}")
+
     return errors
 
 
@@ -394,6 +647,8 @@ def main() -> int:
     errors.extend(validate_prompt_catalog())
     errors.extend(validate_policy_adoption())
     errors.extend(validate_control_plane_link())
+    errors.extend(validate_capability_links())
+    errors.extend(validate_audience_access())
 
     if errors:
         print("ARDS/SDD check failed:")

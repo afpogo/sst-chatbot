@@ -8,16 +8,38 @@ consumers:
   - SST application
   - future applications
 inputs:
-  - user message or task context
-  - optional account or workspace context
+  - user message or approved MetricQuery
+  - PrincipalContext asserted by sst_backend
+  - SafeContextEnvelope or approved MetricSnapshot
   - optional tool or retrieval context
 outputs:
   - normalized assistant response
   - optional structured payload
-  - optional trace metadata
+  - structured metric claims when stakeholder metrics are discussed
+  - disclosure decision
+  - metadata-only trace and audit projection
+audience_contract:
+  supported_audiences: [sst_user, sst_stakeholder]
+  identity_authority: sst_backend
+  safe_data_products:
+    - source: sst_backend
+      classifications: [public, internal, private]
+      audience: sst_user
+    - source: approved_analytics
+      classifications: [public, derived_safe]
+      audience: sst_stakeholder
+  disclosure_metadata:
+    - audience
+    - policy_version
+    - decision_code
+    - contains_business_data
+  read_only: true
+  handoff_created: false
 non_goals:
   - SST should not depend directly on OpenAI, Anthropic, Deepseek, or any specific provider SDK.
   - Unit tests should not call external AI services.
+  - The feed does not authenticate principals, calculate business entitlements, or compute KPIs.
+  - The feed does not expose restricted data, secrets, tenants, people, or raw records to stakeholders.
 open_questions:
   - Which SST runtime boundary will consume these agents first?
   - Should the first integration be HTTP, package import, queue event, or another mechanism?

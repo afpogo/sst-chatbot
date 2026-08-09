@@ -6,3 +6,6 @@ states:
   - id: "agent-runtime-core-v1"
     path: "specs/states/agent-runtime-core-v1.yaml"
     status: "in-progress"
+  - id: "sst-chatbot-audience-access-v1"
+    path: "specs/states/sst-chatbot-audience-access-v1.yaml"
+    status: "in-progress"

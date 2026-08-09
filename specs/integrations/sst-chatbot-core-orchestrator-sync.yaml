@@ -1,7 +1,7 @@
 version: 1
 kind: integration
 id: sst-chatbot-core-orchestrator-sync
-status: draft
+status: active
 title: SST chatbot synchronization with ARDS core and orchestrator
 goal: Define how sst-chatbot stays aligned with 4uentes-ards-core contracts and 4uentes-orchestor execution handoffs without owning production orchestration or canonical ARDS policy.
 participants:
@@ -26,6 +26,7 @@ participants:
       - private prompt and model boundaries
       - retriever POCs and generated workspace context contracts
       - structured intent preparation before orchestrator handoff
+      - audience access policy and safe disclosure implementation
 sync_streams:
   core_contract_adoption:
     direction: 4uentes-ards-core -> sst-chatbot
@@ -73,6 +74,49 @@ sync_streams:
       - sync_source_repo
       - sync_revision
       - indexable
+  child_capability_evidence:
+    status: active
+    direction: sst-chatbot -> 4uentes-orchestor
+    payload_class: technical_maturity_only
+    capability_links_ref: specs/integration/capability-links.yaml
+    delivery_mode: owner-manifest-pull
+    validation_gate: scripts/check.py
+    capabilities:
+      - capability_id: audience-aware-context-governance
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:9dee70856ee092610aa39483df7dbfac4531736c8e8a77481c6d82e53e12a27b
+        evidence:
+          - specs/capabilities/audience-aware-context-governance.yaml
+          - tests/test_audience_access.py
+        execution_authority: none
+        contains_business_data: false
+      - capability_id: sst-user-assistant
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:0d0054af09e9de7c06b3edd7df2f0f2d2fdfcc54d8e9f961851b43487a30b764
+        evidence:
+          - specs/capabilities/sst-user-assistant.yaml
+          - tests/test_audience_access.py
+        execution_authority: none
+        contains_business_data: false
+      - capability_id: sst-stakeholder-insights
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:9d9cca2ee8bd14df85b8f6e8fdf2fa3876380e3015a5b93e0b7c0d0c15a527fb
+        evidence:
+          - specs/capabilities/sst-stakeholder-insights.yaml
+          - tests/test_audience_access.py
+        execution_authority: none
+        contains_business_data: false
+    forbidden_payloads:
+      - user_queries
+      - assistant_responses
+      - metric_values
+      - tenant_or_person_identifiers
 rules:
   - 4uentes-ards-core is the source of canonical ARDS/SDD policies; sst-chatbot only adopts scoped local copies.
   - 4uentes-orchestor owns execution lifecycle after a handoff is accepted.
@@ -80,6 +124,9 @@ rules:
   - User workspace documentation can be indexed only after sync metadata and manifest eligibility are validated.
   - The local fake orchestrator adapter remains test infrastructure until a real transport is defined.
   - Contract drift must be recorded by updating specs/ards/contract-binding.yaml before changing runtime behavior.
+  - Audience reads are functional read-only work and never enter the orchestrator lifecycle.
+  - Child capability evidence contains technical maturity only and never business data.
+  - Every linked capability movement must keep the owner spec, capability link, and outbound evidence stream aligned.
 known_contract_drift:
   - id: orchestrator-inbound-server-operation-list
     status: blocked-local
@@ -99,6 +146,7 @@ validation:
     - Receipts are bound to the submitted payload fingerprint and correlation context.
     - Retriever-ingested user workspace documents carry source tier and sync revision.
     - Server operation intents remain blocked unless approved by orchestrator policy.
+    - Child capability evidence has no execution authority and contains no business data.
 related_docs:
   - docs/architecture/agent-core-and-orchestrator-boundary.md
   - docs/architecture/user-workspace-ards.md
@@ -111,3 +159,5 @@ related_specs:
   - specs/capabilities/retrieval-augmented-generation.yaml
   - specs/capabilities/retriever-strategies.yaml
   - specs/integration/control-plane-link.yaml
+  - specs/architecture/audience-safe-disclosure.yaml
+  - specs/states/sst-chatbot-audience-access-v1.yaml

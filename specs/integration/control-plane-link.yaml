@@ -2,22 +2,33 @@ schema_version: "1.0"
 version: 1
 kind: "control_plane_link"
 id: "control-plane-link"
-status: "draft"
+status: "active"
 control_plane_link:
   control_plane_repo: "4uentes-orchestor"
   state_kind: "feature_state"
   state_id: "sst-chatbot"
   capability_id: "capability.inbound.sst-chatbot-agent-handoff"
   work_origin: "child-repo"
-  request_id: "TODO: post-CR-SST-0082 reconciliation request"
+  request_id: "CR-SST-0082"
+  request_scope: "control-plane link establishment only"
   evidence_ref:
     scope: "local"
     path: "specs/states/agent-runtime-core-v1.yaml"
-  status_hint: "implemented-local"
+  child_capability_evidence_ref:
+    scope: "local"
+    path: "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
+  capability_links_ref:
+    scope: "local"
+    path: "specs/integration/capability-links.yaml"
+  status_hint: "active-local"
   correlation_id: "sst-chatbot-agent-runtime-core-v1"
 last_control_plane_reconciliation:
   request_id: "CR-SST-0082"
   evidence_ref: "4uentes-orchestor:evidence/requests/CR-SST-0082/sst-chatbot-child-sync-diff.yaml"
+pending_capability_reconciliation:
+  status: "awaiting-next-control-plane-reconciliation"
+  request_id: null
+  evidence_ref: "specs/integration/capability-links.yaml"
 alias:
   local_key: "orchestrator_link"
   maps_to: "control_plane_link"
@@ -25,4 +36,5 @@ alias:
 notes:
   - "status_hint is advisory; 4uentes-orchestor owns final reconciled state."
   - "This link does not imply that a production runtime transport exists."
-  - "Current child changes require a future control-plane reconciliation request."
+  - "The local link is active; current child capability changes require a future control-plane reconciliation request."
+  - "Audience capability evidence contains technical maturity only; execution_authority is none and contains_business_data is false."
