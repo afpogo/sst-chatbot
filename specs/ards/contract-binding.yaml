@@ -3,7 +3,7 @@ version: "0.1.0"
 kind: "ards_child_contract_binding"
 repo_id: "sst-chatbot"
 project_type: "backend-api"
-updated_at: "2026-07-13"
+updated_at: "2026-08-09"
 core_contract:
   tool: "ards.get_sync_contract"
   requested_contract_version: "latest"
@@ -20,9 +20,9 @@ core_contract:
     - "human-doc-language"
     - "owner-documentation-authority-policy"
     - "control-plane-link-policy"
-  policy_runtime_revision: "2026-07-11-codex-gpt-5.6-resource-extension"
-  policy_exception_ids:
     - "http-qa-harness-policy"
+  policy_runtime_revision: "2026-07-11-codex-gpt-5.6-resource-extension"
+  policy_exception_ids: []
 orchestrator:
   id: "4uentes-orchestor"
   sync_role: "execution-handoff-authority"

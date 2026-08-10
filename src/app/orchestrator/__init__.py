@@ -1,6 +1,7 @@
 """Local fake orchestrator handoff boundary for tests and POCs."""
 
 from app.orchestrator.fake_client import FakeOrchestratorClient
+from app.orchestrator.http_client import HttpOrchestratorClient
 from app.orchestrator.port import OrchestratorPort
 from app.orchestrator.port import OrchestratorPortError
 from app.orchestrator.service import HandoffCoordinationResult
@@ -18,6 +19,7 @@ __all__ = [
     "HandoffIssue",
     "HandoffPayload",
     "HandoffReceipt",
+    "HttpOrchestratorClient",
     "InMemoryHandoffStore",
     "HandoffCoordinationResult",
     "IntentHandoffCoordinator",

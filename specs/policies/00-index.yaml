@@ -2,13 +2,13 @@ schema_version: "1.0"
 version: 2
 kind: "policy_specs_index"
 status: "active"
-updated_at: "2026-07-13"
+updated_at: "2026-08-09"
 purpose: "Index of the complete local common policy runtime adoption."
 common_policy_runtime:
   registry: "specs/integration/policies.yaml"
   docs: "docs/policies/README.md"
 policies:
-  - {id: "http-qa-harness-policy", path: "specs/policies/http-qa-harness-policy.yaml", status: "exception-open"}
+  - {id: "http-qa-harness-policy", path: "specs/policies/http-qa-harness-policy.yaml", status: "adopted"}
   - {id: "agent-model-selection-policy", path: "specs/policies/agent-model-selection-policy.yaml", status: "adopted"}
   - {id: "agent-resource-degradation-policy", path: "specs/policies/agent-resource-degradation-policy.yaml", status: "adopted"}
   - {id: "agent-task-atomization-policy", path: "specs/policies/agent-task-atomization-policy.yaml", status: "adopted"}
