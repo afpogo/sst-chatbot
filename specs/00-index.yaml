@@ -60,6 +60,9 @@ entries:
       path: specs/capabilities/sst-stakeholder-insights.yaml
       status: active
   integrations:
+    - id: sst-realtime-chat-runtime
+      path: specs/integrations/sst-realtime-chat-runtime.yaml
+      status: draft
     - id: control-plane-link
       path: specs/integration/control-plane-link.yaml
       status: active

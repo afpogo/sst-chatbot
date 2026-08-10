@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from app.chat_runtime.port import RuntimeEvent, TurnRequest
 
 
@@ -13,6 +15,6 @@ class EchoChatRuntime:
         yield RuntimeEvent(
             type="completed",
             text=answer,
-            message_id=f"assistant-{request.message_id}",
+            message_id=str(uuid4()),
             correlation_id=request.correlation_id,
         )

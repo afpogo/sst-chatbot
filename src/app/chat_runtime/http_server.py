@@ -9,6 +9,8 @@ from typing import Any
 
 from app.chat_runtime.port import PrincipalContext, TurnRequest
 from app.chat_runtime.runtime import EchoChatRuntime
+from app.service_auth import JwksServiceTokenVerifier
+from app.service_auth import ServiceCredentialError
 
 TURN_PATH = "/internal/v1/chat/turns"
 
@@ -42,9 +44,16 @@ def _turn_request(payload: dict[str, Any]) -> TurnRequest:
     )
 
 
-def create_handler(runtime=None, service_token: str | None = None):
+def create_handler(runtime=None, service_token: str | None = None, token_verifier=None):
     selected_runtime = runtime or EchoChatRuntime()
-    selected_token = service_token if service_token is not None else os.getenv("CHAT_M2M_TOKEN", "")
+    if token_verifier is not None:
+        selected_verifier = token_verifier
+    elif service_token is not None:
+        def selected_verifier(token: str) -> None:
+            if token != service_token:
+                raise ServiceCredentialError("invalid service token")
+    else:
+        selected_verifier = JwksServiceTokenVerifier.from_env().verify
 
     class ChatHandler(BaseHTTPRequestHandler):
         server_version = "sst-chatbot/1"
@@ -62,7 +71,12 @@ def create_handler(runtime=None, service_token: str | None = None):
                 self._json_error(HTTPStatus.NOT_FOUND, "not_found", "Route not found")
                 return
             auth = self.headers.get("Authorization", "")
-            if not selected_token or auth != f"Bearer {selected_token}":
+            token = auth[7:] if auth.startswith("Bearer ") else ""
+            try:
+                if not token:
+                    raise ServiceCredentialError("missing service token")
+                selected_verifier(token)
+            except ServiceCredentialError:
                 self._json_error(HTTPStatus.UNAUTHORIZED, "unauthorized", "Invalid service credential")
                 return
             try:

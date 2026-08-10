@@ -8,3 +8,4 @@ pydantic
 ipykernel
 pytest
 PyYAML
+PyJWT[crypto]

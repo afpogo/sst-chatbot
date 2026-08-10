@@ -1,0 +1,44 @@
+version: 1
+kind: integration
+id: sst-realtime-chat-runtime
+status: draft
+project: sst-chatbot
+
+orchestrator_link:
+  orchestrator_repo: 4uentes-orchestor
+  work_origin: orchestrator-request
+  request_ids: [CR-SST-0167, CR-SST-0168, CR-SST-0170]
+  correlation_id: SST-7
+
+inbound_turns:
+  endpoint: POST /internal/v1/chat/turns
+  media_type: application/x-ndjson
+  application_port: ChatRuntimePort.process_turn
+  caller: sst-bend
+  auth:
+    algorithm: RS256
+    audience: sst-chatbot
+    scope: chat:process
+    token_use: service
+    jwks_validation: required
+  events: [delta, completed, error]
+  canonical_conversation_persistence: forbidden
+
+outbound_handoff:
+  adapter: HttpOrchestratorClient
+  endpoint: POST /4uentes/v1/agent-handoffs
+  caller: sst-chatbot
+  audience: sst-api
+  scope: agent-handoff:submit
+  automatic_retry: forbidden
+  canonical_receipt_owner: sst-bend
+
+service_credentials:
+  grant_type: client_credentials
+  storage: process_memory_only
+  refresh_token: forbidden
+  secrets_in_logs: forbidden
+
+limitations:
+  - EchoChatRuntime is deterministic local/dev behavior, not a production LLM provider.
+  - The runtime does not authenticate end users; PrincipalContext is trusted only after SST validation.

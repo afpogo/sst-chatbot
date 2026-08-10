@@ -1,9 +1,24 @@
 @baseUrl = http://127.0.0.1:8091
-@serviceToken = local-chat-m2m
+@authUrl = http://localhost:4000/api/auth/internal/oauth/token
+@clientId = sst-bend
+@clientSecret = replace-with-local-secret
+
+### Obtain exact sst-bend -> chatbot grant
+# @name serviceGrant
+POST {{authUrl}}
+Content-Type: application/json
+
+{
+  "grant_type": "client_credentials",
+  "client_id": "{{clientId}}",
+  "client_secret": "{{clientSecret}}",
+  "audience": "sst-chatbot",
+  "scope": "chat:process"
+}
 
 ### SST chatbot internal NDJSON turn
 POST {{baseUrl}}/internal/v1/chat/turns
-Authorization: Bearer {{serviceToken}}
+Authorization: Bearer {{serviceGrant.response.body.access_token}}
 Content-Type: application/json
 
 {
