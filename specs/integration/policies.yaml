@@ -2,7 +2,7 @@ schema_version: "1.0"
 version: 2
 kind: "ards_sdd_agent_policy_registry"
 status: "active"
-updated_at: "2026-07-13"
+updated_at: "2026-08-09"
 purpose: >
   Local adoption registry for the canonical ARDS/SDD common policy runtime
   inherited from 4uentes-ards-core. Current changes remain pending a new
@@ -60,10 +60,10 @@ local_adoption:
 policies:
   - id: "http-qa-harness-policy"
     policy_class: "core-profile-scoped"
-    adoption_status: "exception"
-    applicability_status: "not-applicable"
+    adoption_status: "adopted"
+    applicability_status: "applicable"
     manifest: "specs/policies/http-qa-harness-policy.yaml"
-    rationale: "The repo does not own an HTTP surface or runtime transport yet."
+    rationale: "CR-SST-0168 introduced the versioned internal HTTP turn runtime and reproducible .http harness."
   - id: "agent-model-selection-policy"
     policy_class: "core-general"
     adoption_status: "adopted"
@@ -108,12 +108,7 @@ adoption_manifests:
   path: "specs/policies/"
   index: "specs/policies/00-index.yaml"
 
-exceptions:
-  - policy_id: "http-qa-harness-policy"
-    status: "exception-open"
-    applicability_status: "not-applicable"
-    closure_trigger: "An approved runtime transport gives this repo HTTP ownership."
-    related_request: "CR-SST-0083"
+exceptions: []
 
 gaps: []
 validation:

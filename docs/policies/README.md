@@ -21,11 +21,11 @@ manifests individuales en `specs/policies/`.
 - `human-doc-language`
 - `owner-documentation-authority-policy`
 - `control-plane-link-policy`
+- `http-qa-harness-policy`
 
-`http-qa-harness-policy` está registrada como `exception-open` y actualmente
-`not-applicable`: el chatbot no posee todavía un endpoint HTTP ni el transporte
-runtime del orquestador. Debe adoptarse con un harness `.http` cuando un request
-aprobado introduzca esa superficie.
+`http-qa-harness-policy` quedó adoptada por `CR-SST-0168`: el endpoint interno
+de turnos tiene un caso reproducible en `httpPruebas/chat-turns.http` y pruebas
+automatizadas en `tests/test_chat_http_runtime.py`.
 
 ## Reglas locales
 
@@ -41,6 +41,4 @@ aprobado introduzca esa superficie.
 ## Estado
 
 La adopción local está materializada para la aplicabilidad actual y pendiente
-de una nueva reconciliación del control-plane. La excepción HTTP no representa
-un gap runtime: documenta una superficie que todavía no existe y una aprobación
-formal todavía pendiente.
+de una nueva reconciliación del control-plane.

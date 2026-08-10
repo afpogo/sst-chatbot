@@ -1,0 +1,19 @@
+@baseUrl = http://127.0.0.1:8091
+@serviceToken = local-chat-m2m
+
+### SST chatbot internal NDJSON turn
+POST {{baseUrl}}/internal/v1/chat/turns
+Authorization: Bearer {{serviceToken}}
+Content-Type: application/json
+
+{
+  "conversation_id": "smoke-conversation",
+  "message_id": "smoke-message",
+  "correlation_id": "smoke-correlation",
+  "text": "hola desde smoke",
+  "principal": {
+    "user_id": "smoke-user",
+    "account_id": "smoke-account",
+    "tenant_id": "smoke-tenant"
+  }
+}

@@ -1,5 +1,5 @@
 schema_version: "1.0"
-kind: "policy_exception_manifest"
+kind: "policy_adoption_manifest"
 policy_id: "http-qa-harness-policy"
 policy_class: "core-profile-scoped"
 policy_source:
@@ -12,16 +12,16 @@ applicability: "Backend/API repos that own or consume an HTTP contract"
 adoption_mode: "required-by-profile"
 required_for_profiles: ["backend-api-with-http-ownership"]
 optional_for_profiles: ["backend-api-without-http-ownership"]
-template_binding: "templates/specs/policies/policy-exception.template.yaml"
+template_binding: "templates/specs/policies/policy-adoption.template.yaml"
 local_aliases: []
 adopting_repo: "sst-chatbot"
-exception_status: "exception-open"
 owner: "sst-chatbot"
-reason: "The repo does not own an HTTP endpoint or runtime transport yet."
-opened_at: "2026-07-13"
-expires_at: "when an approved request assigns HTTP ownership"
-closure_plan: "Adopt the policy, add versioned .http cases, and reference them from validation docs."
-approval_ref: "TODO: post-CR-SST-0082 control-plane reconciliation request"
+adoption_status: "adopted"
+adopted_at: "2026-08-09"
+approval_ref: "4uentes-orchestor:CR-SST-0168"
+local_implementation_path: "httpPruebas/chat-turns.http"
+validation_ref: "tests/test_chat_http_runtime.py"
 evidence_refs:
   - "docs/ai/policy.md"
   - "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
+  - "docs/architecture/http-chat-runtime.md"
