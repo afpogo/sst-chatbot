@@ -24,6 +24,15 @@ inbound_turns:
   events: [delta, completed, error]
   canonical_conversation_persistence: forbidden
 
+provider_boundary:
+  runtime_adapter: ProviderChatRuntime
+  port: StreamingChatProviderPort.stream_text
+  principal_context_forwarding: forbidden
+  smoke:
+    command: .\.venv\Scripts\python.exe scripts\smoke_llm_provider_connection.py
+    simulated_protocol: openai-compatible-sse
+    output_protocol: application/x-ndjson
+
 outbound_handoff:
   adapter: HttpOrchestratorClient
   endpoint: POST /4uentes/v1/agent-handoffs
@@ -41,4 +50,5 @@ service_credentials:
 
 limitations:
   - EchoChatRuntime is deterministic local/dev behavior, not a production LLM provider.
+  - The OpenAI-compatible SSE connection is exercised only by a local simulated provider smoke; production provider configuration remains pending.
   - The runtime does not authenticate end users; PrincipalContext is trusted only after SST validation.

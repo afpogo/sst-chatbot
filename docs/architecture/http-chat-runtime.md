@@ -4,6 +4,18 @@ El servicio expone `POST /internal/v1/chat/turns` sólo para `sst-bend`. La llam
 
 El contrato de aplicación vive en `ChatRuntimePort.process_turn()`: no conoce HTTP, Socket.IO ni persistencia. La implementación local `EchoChatRuntime` es deliberadamente determinista para desarrollo y smoke tests; no representa todavía la conexión a un proveedor LLM productivo.
 
+`ProviderChatRuntime` permite inyectar un `StreamingChatProviderPort` sin
+filtrar `PrincipalContext` al proveedor. El smoke reproducible levanta un
+proveedor local compatible con streaming SSE, lo conecta mediante ese port al
+endpoint HTTP real del chatbot y valida la traduccion SSE -> NDJSON:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\smoke_llm_provider_connection.py
+```
+
+Este smoke demuestra el boundary y la conexion simulada; no representa una
+credencial, SDK ni proveedor LLM productivo configurado.
+
 Arranque local:
 
 ```powershell

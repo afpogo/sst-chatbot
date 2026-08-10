@@ -32,3 +32,7 @@ class ChatRuntimePort(Protocol):
     def process_turn(self, request: TurnRequest) -> Iterable[RuntimeEvent]:
         """Yield transport-neutral turn events in order."""
 
+
+class StreamingChatProviderPort(Protocol):
+    def stream_text(self, *, text: str, correlation_id: str) -> Iterable[str]:
+        """Yield provider text without receiving the SST principal context."""
