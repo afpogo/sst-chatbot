@@ -16,6 +16,10 @@ endpoint HTTP real del chatbot y valida la traduccion SSE -> NDJSON:
 Este smoke demuestra el boundary y la conexion simulada; no representa una
 credencial, SDK ni proveedor LLM productivo configurado.
 
+Si el provider falla después de emitir deltas, el adapter HTTP termina con un
+registro `error` que conserva sólo el `correlation_id`; no emite `completed` ni
+expone el detalle de la excepción o secretos del provider.
+
 Arranque local:
 
 ```powershell

@@ -98,3 +98,28 @@ def test_turn_uses_injected_service_jwt_verifier():
     finally:
         server.shutdown()
     assert tokens == ["signed-service-jwt"]
+
+
+def test_turn_emits_error_without_completed_after_partial_runtime_failure():
+    class FailingRuntime:
+        def process_turn(self, _request):
+            yield {"type": "delta", "text": "partial"}
+            raise RuntimeError("provider secret must not be exposed")
+
+    server = ThreadingHTTPServer(
+        ("127.0.0.1", 0),
+        create_handler(runtime=FailingRuntime(), service_token="test-m2m"),
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with _request(server.server_port, payload=_payload()) as response:
+            events = [json.loads(line) for line in response]
+    finally:
+        server.shutdown()
+
+    assert events == [
+        {"type": "delta", "text": "partial"},
+        {"type": "error", "code": "runtime_error", "correlation_id": "correlation-1"},
+    ]
+    assert "secret" not in json.dumps(events)
