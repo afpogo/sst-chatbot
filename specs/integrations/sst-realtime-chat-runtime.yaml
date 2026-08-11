@@ -22,6 +22,7 @@ inbound_turns:
     token_use: service
     jwks_validation: required
   events: [delta, completed, error]
+  partial_failure: error-without-completed
   canonical_conversation_persistence: forbidden
 
 provider_boundary:
