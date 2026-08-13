@@ -1,0 +1,61 @@
+schema_version: "1.0"
+version: 1
+kind: feature_state
+id: sst-stakeholder-metrics-rag-v1
+status: in-progress
+title: Governed RAG for SST stakeholder metrics V1
+updated_at: "2026-08-13"
+owner: sst-chatbot
+control_plane_link:
+  repo: 4uentes-orchestor
+  request_id: CR-SST-0156
+  state_id: sst-stakeholder-metrics-rag
+  capability_id: sst-stakeholder-insights
+  status_hint: implemented-local
+implemented:
+  - Existing closed monthly MetricQuery and MetricSnapshot catalog remains the only KPI value authority.
+  - Minimum cohort, provenance and exact structured-claim checks happen before disclosure.
+  - Owner-controlled methodology source, authorization projection, retriever and grounded-answer ports.
+  - Authorization before ranking by metric, active/indexable state, classification and entitlement.
+  - Documentary citations restricted to methodology actually retrieved for the turn.
+  - Non-numeric narrative with exact MetricClaim validation against the analytics snapshot.
+  - Metadata-only trace and sanitized fail-closed errors.
+  - Positive and disclosure-blocking deterministic smoke.
+pending:
+  - Approve and implement the canonical methodology repository.
+  - Connect a real analytics adapter and a real retrieval index under separate requests.
+  - Integrate the runtime with chat only after provider, secret-custody and transport contracts are approved.
+non_goals:
+  - Read tenant, person, conversation or raw analytics records.
+  - Calculate KPI values from retrieved documents or provider output.
+  - Call OpenAI or any external provider.
+  - Change HTTP, Socket.IO or handoff behavior.
+evidence:
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/policy.py
+    - src/app/audience_access/metrics.py
+    - src/app/audience_access/methodology.py
+    - src/app/audience_access/runtime.py
+    - src/app/audience_access/stakeholder_rag.py
+  tests:
+    - tests/test_audience_access.py
+    - tests/test_stakeholder_rag.py
+    - tests/test_stakeholder_rag_specs.py
+  test_cases:
+    - test_grounded_stakeholder_answer_preserves_snapshot_and_citations
+    - test_snapshot_gates_stop_before_methodology_and_provider
+    - test_only_allowlisted_methodology_reaches_retriever_and_provider
+    - test_missing_or_failed_methodology_fails_closed_without_provider
+    - test_provider_output_requires_exact_claims_safe_narrative_and_known_citations
+    - test_forbidden_question_and_provider_failure_are_sanitized
+  smoke:
+    - scripts/smoke_stakeholder_rag.py
+  owner_docs:
+    - docs/architecture/grounded-stakeholder-metrics-rag.md
+    - specs/capabilities/sst-stakeholder-insights.yaml
+    - specs/capabilities/audience-aware-context-governance.yaml
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_stakeholder_rag.py tests/test_stakeholder_rag_specs.py
+    - .\.venv\Scripts\python.exe scripts/smoke_stakeholder_rag.py
+    - .\.venv\Scripts\python.exe scripts/check.py

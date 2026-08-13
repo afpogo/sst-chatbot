@@ -18,6 +18,7 @@ REQUIRED_PATHS = [
     "docs/architecture/provider-agnostic-agents.md",
     "docs/architecture/agent-runtime-product-intent.md",
     "docs/architecture/audience-safe-disclosure.md",
+    "docs/architecture/grounded-stakeholder-metrics-rag.md",
     "docs/architecture/control-plane-capability-links.md",
     "docs/adr/0001-adopt-ards-sdd.md",
     "docs/adr/0001-python-agentic-project-structure.md",
@@ -53,6 +54,8 @@ REQUIRED_PATHS = [
     "specs/capabilities/sst-stakeholder-insights.yaml",
     "specs/integrations/sst-agent-feed.yaml",
     "specs/states/sst-chatbot-audience-access-v1.yaml",
+    "specs/states/sst-stakeholder-metrics-rag-v1.yaml",
+    "scripts/smoke_stakeholder_rag.py",
     "specs/templates/feature.template.yaml",
     "specs/templates/poc.template.yaml",
     "specs/templates/state-scenario.template.yaml",
@@ -572,6 +575,7 @@ def validate_audience_access() -> list[str]:
     expected_matrix = {
         ("sst_user", "sst_backend"): {"public", "internal", "private"},
         ("sst_stakeholder", "approved_analytics"): {"public", "derived_safe"},
+        ("sst_stakeholder", "approved_methodology"): {"public", "derived_safe"},
     }
     actual_matrix: dict[tuple[str, str], set[str]] = {}
     for row in governance.get("access_matrix", []):
@@ -585,6 +589,9 @@ def validate_audience_access() -> list[str]:
         errors.append("Audience access policy must deny by default")
     if set(governance.get("absolute_denials", [])) != {"restricted", "secret"}:
         errors.append("restricted and secret must be absolute denials")
+
+    state_index = load_yaml(ROOT_DIR / "specs" / "states" / "00-index.yaml")
+    indexed_states = {item.get("id"): item for item in state_index.get("states", [])}
 
     stakeholder = capabilities["sst-stakeholder-insights"]
     expected_metrics = {
@@ -604,6 +611,29 @@ def validate_audience_access() -> list[str]:
         errors.append("Stakeholder minimum cohort size must be 10")
     if stakeholder.get("dimensions") != {"module_adoption": ["module_id"]}:
         errors.append("module_id must be the only initial stakeholder dimension")
+    if stakeholder.get("approved_sources") != {
+        "metric_values": "approved_analytics",
+        "documentary_context": "approved_methodology",
+    }:
+        errors.append("Stakeholder analytics and methodology source authorities drifted")
+    retrieval = stakeholder.get("methodology_retrieval", {})
+    for required_true in (
+        "metric_match_required",
+        "active_and_indexable_required",
+        "entitlement_required",
+        "authorization_before_ranking",
+    ):
+        if retrieval.get(required_true) is not True:
+            errors.append(f"Stakeholder methodology rule must be true: {required_true}")
+    if retrieval.get("can_calculate_metric_values") is not False:
+        errors.append("Methodology retrieval cannot calculate metric values")
+    output = stakeholder.get("output_contract", {})
+    if output.get("exact_snapshot_claims_required") is not True:
+        errors.append("Stakeholder output must require exact snapshot claims")
+    if output.get("retrieved_citations_required") is not True:
+        errors.append("Stakeholder output must require retrieved citations")
+    if output.get("numeric_narrative_allowed") is not False:
+        errors.append("Stakeholder narrative must not carry numeric values")
     for forbidden_flag in (
         "free_filters_allowed",
         "tenant_drill_down_allowed",
@@ -612,10 +642,42 @@ def validate_audience_access() -> list[str]:
         if stakeholder.get(forbidden_flag) is not False:
             errors.append(f"Stakeholder policy flag must be false: {forbidden_flag}")
 
+    stakeholder_state_path = (
+        ROOT_DIR / "specs" / "states" / "sst-stakeholder-metrics-rag-v1.yaml"
+    )
+    stakeholder_state = load_yaml(stakeholder_state_path)
+    if stakeholder_state.get("status") != "in-progress":
+        errors.append("Stakeholder RAG state must remain in-progress until integration")
+    if indexed_states.get(stakeholder_state.get("id"), {}).get("status") != stakeholder_state.get(
+        "status"
+    ):
+        errors.append("Stakeholder RAG state index status mismatch")
+    stakeholder_evidence = stakeholder_state.get("evidence", {})
+    stakeholder_refs: list[str] = []
+    for evidence_group in ("code", "tests", "smoke", "owner_docs"):
+        stakeholder_refs.extend(stakeholder_evidence.get(evidence_group, []))
+    for evidence_ref in stakeholder_refs:
+        if not (ROOT_DIR / evidence_ref).exists():
+            errors.append(f"Stakeholder RAG state evidence does not exist: {evidence_ref}")
+    stakeholder_tests_source = "\n".join(
+        (ROOT_DIR / evidence_ref).read_text(encoding="utf-8")
+        for evidence_ref in stakeholder_evidence.get("tests", [])
+    )
+    for test_case in stakeholder_evidence.get("test_cases", []):
+        if f"def {test_case}(" not in stakeholder_tests_source:
+            errors.append(f"Stakeholder RAG test evidence is stale: {test_case}")
+    stakeholder_local = stakeholder.get("local_implementation", {})
+    for key in ("smoke", "state_ref", "owner_doc_ref"):
+        evidence_ref = stakeholder_local.get(key, "")
+        if not evidence_ref or not (ROOT_DIR / evidence_ref).exists():
+            errors.append(f"Stakeholder RAG local ref does not exist: {key}={evidence_ref}")
+    if "scripts/smoke_stakeholder_rag.py" not in (
+        ROOT_DIR / "scripts/check.py"
+    ).read_text(encoding="utf-8"):
+        errors.append("Repository check does not execute the stakeholder RAG smoke")
+
     state_path = ROOT_DIR / "specs" / "states" / "sst-chatbot-audience-access-v1.yaml"
     state = load_yaml(state_path)
-    state_index = load_yaml(ROOT_DIR / "specs" / "states" / "00-index.yaml")
-    indexed_states = {item.get("id"): item for item in state_index.get("states", [])}
     if state.get("status") != "in-progress":
         errors.append("Audience feature state must be in-progress")
     if indexed_states.get(state.get("id"), {}).get("status") != state.get("status"):
@@ -707,6 +769,7 @@ def validate_governed_rag() -> list[str]:
         "pull_request:",
         "python scripts/check.py",
         "--source=src/app/governed_rag",
+        "--source=src/app/audience_access",
         "--fail-under=90",
     ):
         if required_fragment not in workflow:

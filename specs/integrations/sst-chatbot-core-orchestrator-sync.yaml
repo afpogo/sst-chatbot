@@ -28,6 +28,7 @@ participants:
       - structured intent preparation before orchestrator handoff
       - audience access policy and safe disclosure implementation
       - governed user-memory retrieval policy, ranking and grounding contracts
+      - governed stakeholder methodology retrieval, exact metric claims and documentary citations
 sync_streams:
   core_contract_adoption:
     direction: 4uentes-ards-core -> sst-chatbot
@@ -87,7 +88,7 @@ sync_streams:
         owner: sst-chatbot
         capability_status: active
         local_status: implemented-local
-        movement_digest: sha256:9dee70856ee092610aa39483df7dbfac4531736c8e8a77481c6d82e53e12a27b
+        movement_digest: sha256:a8e51e94623b185ecfed4b48fe04c35207bd8d401c29b245427a63cf7e7e7899
         evidence:
           - specs/capabilities/audience-aware-context-governance.yaml
           - tests/test_audience_access.py
@@ -97,7 +98,7 @@ sync_streams:
         owner: sst-chatbot
         capability_status: active
         local_status: implemented-local
-        movement_digest: sha256:0d0054af09e9de7c06b3edd7df2f0f2d2fdfcc54d8e9f961851b43487a30b764
+        movement_digest: sha256:4828e94d42dffbafd54d311ee1d931785d09d9a48eb3ef859a85cfb8a0a3781f
         evidence:
           - specs/capabilities/sst-user-assistant.yaml
           - tests/test_audience_access.py
@@ -107,10 +108,14 @@ sync_streams:
         owner: sst-chatbot
         capability_status: active
         local_status: implemented-local
-        movement_digest: sha256:9d9cca2ee8bd14df85b8f6e8fdf2fa3876380e3015a5b93e0b7c0d0c15a527fb
+        movement_digest: sha256:079b7a0893c8178b7f367069ad84fbbe43c6b9a3185abe8aa218a3b4d748db98
         evidence:
           - specs/capabilities/sst-stakeholder-insights.yaml
           - tests/test_audience_access.py
+          - specs/states/sst-stakeholder-metrics-rag-v1.yaml
+          - tests/test_stakeholder_rag.py
+          - tests/test_stakeholder_rag_specs.py
+          - scripts/smoke_stakeholder_rag.py
         execution_authority: none
         contains_business_data: false
       - capability_id: retrieval-augmented-generation
@@ -144,6 +149,7 @@ rules:
   - Child capability evidence contains technical maturity only and never business data.
   - Every linked capability movement must keep the owner spec, capability link, and outbound evidence stream aligned.
   - Governed RAG child evidence reports technical maturity only; private queries, chunks, answers and citations stay local to the runtime boundary.
+  - Stakeholder RAG child evidence reports technical maturity only; metric values, questions, methodology content and grounded answers stay local to the runtime boundary.
 known_contract_drift:
   - id: orchestrator-inbound-server-operation-list
     status: blocked-local
@@ -178,3 +184,4 @@ related_specs:
   - specs/integration/control-plane-link.yaml
   - specs/architecture/audience-safe-disclosure.yaml
   - specs/states/sst-chatbot-audience-access-v1.yaml
+  - specs/states/sst-stakeholder-metrics-rag-v1.yaml

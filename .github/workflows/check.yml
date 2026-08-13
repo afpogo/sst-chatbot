@@ -46,3 +46,8 @@ jobs:
         run: |
           python -m coverage run --source=src/app/governed_rag -m pytest tests/test_governed_rag.py tests/test_governed_rag_specs.py
           python -m coverage report --show-missing --fail-under=90
+
+      - name: Enforce audience access and stakeholder RAG coverage
+        run: |
+          python -m coverage run --source=src/app/audience_access -m pytest tests/test_audience_access.py tests/test_audience_access_specs.py tests/test_stakeholder_rag.py tests/test_stakeholder_rag_specs.py
+          python -m coverage report --show-missing --fail-under=90

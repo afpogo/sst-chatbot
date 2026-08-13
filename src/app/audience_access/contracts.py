@@ -26,6 +26,7 @@ class DataClassification(str, Enum):
 class SafeContextSource(str, Enum):
     SST_BACKEND = "sst_backend"
     APPROVED_ANALYTICS = "approved_analytics"
+    APPROVED_METHODOLOGY = "approved_methodology"
 
 
 class PrincipalScope(BaseModel):
@@ -152,6 +153,39 @@ class MetricSnapshot(BaseModel):
     provenance: str
 
 
+class MethodologyRecord(BaseModel):
+    """Owner-controlled methodology candidate; it never carries KPI values."""
+
+    model_config = {"extra": "forbid", "frozen": True}
+
+    source_id: str = Field(min_length=1)
+    metric_id: MetricId
+    title: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    classification: DataClassification
+    required_entitlements: frozenset[str] = Field(default_factory=frozenset)
+    active: bool
+    indexable: bool
+    provenance: str = Field(min_length=1)
+
+
+class AuthorizedMethodology(BaseModel):
+    model_config = {"extra": "forbid", "frozen": True}
+
+    source_id: str
+    title: str
+    content: str
+    provenance: str
+
+
+class MethodologyCitation(BaseModel):
+    model_config = {"extra": "forbid", "frozen": True}
+
+    source_id: str
+    title: str
+    provenance: str
+
+
 class MetricClaim(BaseModel):
     model_config = {"extra": "forbid", "frozen": True}
 
@@ -167,6 +201,42 @@ class ProviderAnswer(BaseModel):
 
     text: str
     claims: tuple[MetricClaim, ...] = ()
+
+
+class StakeholderGroundedAnswer(BaseModel):
+    """Provider output keeps KPI values structured and narrative non-numeric."""
+
+    model_config = {"extra": "forbid", "frozen": True}
+
+    narrative: str = Field(min_length=1)
+    claims: tuple[MetricClaim, ...] = Field(min_length=1)
+    citation_source_ids: tuple[str, ...] = Field(min_length=1)
+
+
+class StakeholderRagTrace(BaseModel):
+    model_config = {"extra": "forbid", "frozen": True}
+
+    correlation_id: str = Field(min_length=1)
+    decision_code: str = Field(min_length=1)
+    methodology_candidate_count: int = Field(ge=0)
+    methodology_authorized_count: int = Field(ge=0)
+    methodology_retrieved_count: int = Field(ge=0)
+    provider_called: bool
+    contains_business_data: Literal[False] = False
+
+
+class StakeholderRagResult(BaseModel):
+    model_config = {"extra": "forbid", "frozen": True}
+
+    accepted: bool
+    code: str
+    snapshot: MetricSnapshot | None = None
+    narrative: str = ""
+    claims: tuple[MetricClaim, ...] = ()
+    citations: tuple[MethodologyCitation, ...] = ()
+    analytics_provenance: str = ""
+    trace: StakeholderRagTrace
+    handoff_required: Literal[False] = False
 
 
 class PreparedProviderRequest(BaseModel):
