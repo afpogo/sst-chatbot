@@ -84,6 +84,16 @@ governance_rules:
   - Corrections should create a new memory record or lifecycle transition.
   - Generated ARDS/SDD artifacts must reference source memory records.
   - Memory records must not be treated as authoritative product records for SST.
+rag_read_projection:
+  status: implemented-local-with-fakes
+  request_id: CR-SST-0155
+  runtime_ref: src/app/governed_rag/runtime.py
+  rules:
+    - Only active and indexable governed records are eligible.
+    - Tenant, user, application, entitlement, classification and source checks run before ranking.
+    - Raw chats and runtime events are not eligible unless a later governed promotion creates a memory record.
+    - The local in-memory source is test infrastructure and does not claim canonical persistence ownership.
+    - Retrieval is read-only and cannot emit memory proposals or orchestrator handoffs.
 robots_context:
   discovery_source: CR-SST-0006
   current_state: runtime-partial
@@ -102,3 +112,4 @@ validation:
     - Retrieval candidates are filtered by account and application scope.
     - Workspace generation can cite source memory records.
     - CR-SST-0021 tests cover governed records, phase runs, in-memory store idempotency, fake provider execution, visibility candidates, and orchestrator handoff payload mapping.
+    - CR-SST-0155 tests prove pre-ranking authorization, secret exclusion, citation integrity and metadata-only traces.

@@ -53,13 +53,16 @@ def test_control_plane_capability_inventory_contains_technical_evidence_only() -
     assert stream["capability_links_ref"] == "specs/integration/capability-links.yaml"
     assert stream["payload_class"] == "technical_maturity_only"
     assert set(stream["forbidden_payloads"]) == {
+        "grounded_answer_content",
         "user_queries",
         "assistant_responses",
         "metric_values",
+        "retrieved_private_chunks",
         "tenant_or_person_identifiers",
     }
     expected_ids = {
         "audience-aware-context-governance",
+        "retrieval-augmented-generation",
         "sst-user-assistant",
         "sst-stakeholder-insights",
     }
@@ -81,7 +84,10 @@ def test_control_plane_link_is_active_without_inventing_a_new_reconciliation() -
     assert link["status"] == "active"
     assert link["control_plane_link"]["request_id"] == "CR-SST-0082"
     assert "receipt" not in link["control_plane_link"]
-    assert link["pending_capability_reconciliation"]["request_id"] is None
+    pending = link["pending_capability_reconciliation"]
+    assert pending["request_id"] == "CR-SST-0155"
+    assert pending["status"] == "in-progress-owner-evidence-ready"
+    assert (ROOT_DIR / pending["evidence_ref"]).exists()
     child_ref = link["control_plane_link"]["child_capability_evidence_ref"]
     assert child_ref["scope"] == "local"
     assert (ROOT_DIR / child_ref["path"]).exists()

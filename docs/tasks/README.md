@@ -25,6 +25,7 @@ Do not use it for transient logs, raw debug output, or secrets.
 - Keep Plaud transcript derivations asynchronous through `4uentes-orchestor`; do not make Plaud sync depend on chatbot completion.
 
 ## Latest Summary
+- `docs/tasks/2026-08-13-governed-user-memory-rag.md`
 - `docs/tasks/2026-08-10-llm-provider-smoke.md`
 - `docs/tasks/2026-05-24-plaud-sst-orchestrator-handoff.md`
 - `docs/tasks/2026-04-27-session-summary.md`

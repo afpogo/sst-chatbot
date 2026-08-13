@@ -26,9 +26,9 @@ last_control_plane_reconciliation:
   request_id: "CR-SST-0082"
   evidence_ref: "4uentes-orchestor:evidence/requests/CR-SST-0082/sst-chatbot-child-sync-diff.yaml"
 pending_capability_reconciliation:
-  status: "awaiting-next-control-plane-reconciliation"
-  request_id: null
-  evidence_ref: "specs/integration/capability-links.yaml"
+  status: "in-progress-owner-evidence-ready"
+  request_id: "CR-SST-0155"
+  evidence_ref: "specs/states/sst-user-governed-rag-v1.yaml"
 alias:
   local_key: "orchestrator_link"
   maps_to: "control_plane_link"
@@ -36,5 +36,5 @@ alias:
 notes:
   - "status_hint is advisory; 4uentes-orchestor owns final reconciled state."
   - "This link does not imply that a production runtime transport exists."
-  - "The local link is active; current child capability changes require a future control-plane reconciliation request."
-  - "Audience capability evidence contains technical maturity only; execution_authority is none and contains_business_data is false."
+  - "The local link is active; governed RAG owner evidence is being reconciled under CR-SST-0155."
+  - "Capability evidence contains technical maturity only; execution_authority is none and contains_business_data is false."

@@ -68,6 +68,7 @@ The key architectural rule is that a vector record is not just a vector. It must
 If the embedding model, chunking logic, or metadata contract changes, the index should be treated as versioned state and rebuilt or migrated deliberately.
 
 ## Safety And Multi-Tenant Rules
+- Authorization by tenant, user, application, entitlements, classification and source must finish before ranking, not only before prompt assembly.
 - Every indexed document needs metadata such as `workspace_id`, `source_id`, `document_type`, and `title`.
 - Retrieval must filter by workspace or account before ranking.
 - Answers should include sources when based on private context.
@@ -75,6 +76,15 @@ If the embedding model, chunking logic, or metadata contract changes, the index 
 - Future vector stores must preserve the same metadata filtering behavior.
 - Internal ARDS/SDD and generated ARDS/SDD must not be mixed in the same corpus without explicit ownership metadata.
 - Vector indexes must preserve embedding model and pipeline version metadata so retrieval results remain auditable.
+- Restricted, secret, credential-like, inactive and non-indexable records must never reach a retriever or provider adapter.
+- Provider output must use structured claims whose citations are validated against the retrieved chunk set.
+
+## Implementación gobernada local
+
+CR-SST-0155 promueve estas reglas a `src/app/governed_rag/` con ports y fakes
+deterministas. La explicación completa vive en
+`docs/architecture/governed-user-memory-rag.md`. Este corte no está conectado
+al runtime HTTP del chat y no adopta todavía base vectorial ni proveedor real.
 
 ## Evolution Path
 After the local POC, the next implementation steps are:

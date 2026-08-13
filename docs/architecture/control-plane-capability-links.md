@@ -2,10 +2,10 @@
 
 ## Propósito
 
-El registro `specs/integration/capability-links.yaml` mantiene un vínculo activo
-entre las capabilities de audiencias de `sst-chatbot` y el capability padre ya
-conocido por `4uentes-orchestor`. Cada link conserva el owner spec, el estado
-local y la evidencia técnica que el control-plane puede reconciliar.
+El registro `specs/integration/capability-links.yaml` mantiene vínculos activos
+entre las capabilities de `sst-chatbot` y sus capabilities padre conocidas por
+`4uentes-orchestor`. Cada link conserva el owner spec, el estado local y la
+evidencia técnica que el control-plane puede reconciliar.
 
 ## Movimiento de capabilities
 
@@ -25,11 +25,17 @@ manifiesto del repositorio y reconciliarlo.
 
 ## Límite actual
 
-El link local está activo y fue establecido sobre la reconciliación conocida
-`CR-SST-0082`. Las tres capabilities nuevas todavía esperan la próxima
-reconciliación del control-plane y por eso no tienen IDs remotos inventados.
+El link local fue establecido por `CR-SST-0082`. Las capabilities de audiencia
+conservan ese parent y CR-SST-0155 agrega el movimiento owner de
+`retrieval-augmented-generation` hacia el estado `sst-user-ards-rag` ya
+registrado por el control-plane. La evidencia queda lista para readback sin
+inventar IDs remotos ni afirmar una entrega automática.
 
 No existe push remoto automático porque `4uentes-orchestor` no publicó un
 transporte de ingestión para evidencia de child capabilities. Hasta que exista,
 el gate garantiza integridad y visibilidad en el manifiesto, pero no afirma una
 entrega remota que no ocurrió.
+
+El stream contiene únicamente madurez técnica. Preguntas, chunks privados,
+respuestas grounded, citas con datos de negocio e identificadores de
+tenant/persona están prohibidos.

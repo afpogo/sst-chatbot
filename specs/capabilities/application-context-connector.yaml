@@ -46,6 +46,22 @@ principal_context:
     - entitlements
     - authentication_ref
     - policy_version
+governed_retrieval_scope:
+  status: implemented-local-with-fakes
+  request_id: CR-SST-0155
+  derived_from: PrincipalContext
+  required_fields:
+    - tenant_id
+    - user_id
+    - application_id
+    - entitlements
+    - allowed_classifications
+    - allowed_sources
+    - policy_version
+  authority_rules:
+    - User text cannot provide or override retrieval scope.
+    - The chatbot validates the complete scope before reading candidates.
+    - A future connector adapter may project a validated SST principal but cannot grant broader access than SST asserted.
 safe_context:
   envelope: SafeContextEnvelope
   classifications: [public, internal, private, derived_safe, restricted, secret]
@@ -81,3 +97,4 @@ validation:
     - Blocked intents cannot be emitted from connector-derived context.
     - Principal identity is asserted by sst_backend and scope is complete for its audience.
     - Classification, source, and disclosure metadata are validated before provider input.
+    - Retrieval scope cannot be expanded through query text or retrieved prompt-injection content.
