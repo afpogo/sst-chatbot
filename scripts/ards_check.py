@@ -56,6 +56,7 @@ REQUIRED_PATHS = [
     "specs/templates/feature.template.yaml",
     "specs/templates/poc.template.yaml",
     "specs/templates/state-scenario.template.yaml",
+    ".github/workflows/check.yml",
     "pocs/README.md",
 ]
 
@@ -701,6 +702,17 @@ def validate_governed_rag() -> list[str]:
         ROOT_DIR / "scripts/check.py"
     ).read_text(encoding="utf-8"):
         errors.append("Repository check does not execute the governed RAG smoke")
+    workflow = (ROOT_DIR / ".github/workflows/check.yml").read_text(encoding="utf-8")
+    for required_fragment in (
+        "pull_request:",
+        "python scripts/check.py",
+        "--source=src/app/governed_rag",
+        "--fail-under=90",
+    ):
+        if required_fragment not in workflow:
+            errors.append(
+                f"GitHub repository check is missing: {required_fragment}"
+            )
     return errors
 
 

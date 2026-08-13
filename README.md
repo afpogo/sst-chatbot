@@ -28,3 +28,7 @@ Fill `.env` locally. Do not commit secrets.
 ```
 
 Unit tests must not call OpenAI, LangSmith, or any other external provider.
+
+GitHub Actions runs the same repository gate on `main`, `develop`, `agent/**`
+and pull requests. It also enforces at least 90% line coverage for
+`src/app/governed_rag`.

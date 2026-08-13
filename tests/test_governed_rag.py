@@ -72,6 +72,20 @@ class FailingSource:
         raise RuntimeError("database address must not escape")
 
 
+class InvalidRecordSource:
+    def list_candidates(self, _scope):
+        return ({"content": "unvalidated secret=must-not-escape"},)
+
+
+class InvalidProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def answer(self, **_kwargs):
+        self.calls += 1
+        return {"text": "unstructured output"}
+
+
 def runtime(records, *, provider=None, retriever=None, **kwargs):
     source = InMemoryGovernedMemorySource(records)
     effective_provider = provider or RecordingGroundedAnswerProvider()
@@ -371,6 +385,43 @@ def test_source_retriever_and_provider_errors_are_sanitized() -> None:
     assert source_result.status is RagStatus.ERROR
     assert source_result.decision_code == "source_error"
     assert "database address" not in source_result.model_dump_json()
+
+
+def test_invalid_source_record_fails_closed_with_sanitized_policy_error() -> None:
+    provider = RecordingGroundedAnswerProvider()
+    rag = GovernedRagRuntime(
+        source=InvalidRecordSource(),
+        retriever=LexicalRetriever(),
+        provider=provider,
+    )
+
+    result = rag.answer(
+        question="retrieval",
+        scope=scope(),
+        correlation_id="corr-invalid-record",
+    )
+
+    assert result.status is RagStatus.ERROR
+    assert result.decision_code == "policy_error"
+    assert "must-not-escape" not in result.model_dump_json()
+    assert provider.calls == []
+
+
+def test_invalid_provider_payload_fails_closed_without_exposing_output() -> None:
+    provider = InvalidProvider()
+    rag, _source, _retriever, _provider = runtime([record()], provider=provider)
+
+    result = rag.answer(
+        question="retrieval",
+        scope=scope(),
+        correlation_id="corr-invalid-provider",
+    )
+
+    assert result.status is RagStatus.DENIED
+    assert result.decision_code == "invalid_provider_output"
+    assert result.answer == ""
+    assert result.citations == ()
+    assert provider.calls == 1
 
 
 def test_lexical_retrieval_order_is_deterministic_for_equal_scores() -> None:

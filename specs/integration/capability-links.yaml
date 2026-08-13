@@ -77,7 +77,7 @@ capability_links:
     relationship: "child_evidence"
     control_plane_parent_capability_id: "retrieval-augmented-generation"
     evidence_ref: "specs/states/sst-user-governed-rag-v1.yaml"
-    movement_digest: "sha256:33c3ba004dbb2bba5bd71779b17e68fbf0c6a56f2d1aa354fb8b224740a36f55"
+    movement_digest: "sha256:62015fe76a122cbe40971c34d1174458a78b7b9906119c3654c2dac3b3233a82"
     remote_binding_status: "awaiting-cr-sst-0155-readback"
     execution_authority: "none"
     contains_business_data: false

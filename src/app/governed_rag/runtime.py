@@ -74,11 +74,19 @@ class GovernedRagRuntime:
         except Exception:
             return self._result(RagStatus.ERROR, "source_error", correlation_id)
 
-        authorized = tuple(
-            chunk
-            for record in candidates
-            if (chunk := self._policy.authorize(scope, record)) is not None
-        )
+        try:
+            authorized = tuple(
+                chunk
+                for record in candidates
+                if (chunk := self._policy.authorize(scope, record)) is not None
+            )
+        except Exception:
+            return self._result(
+                RagStatus.ERROR,
+                "policy_error",
+                correlation_id,
+                candidate_count=len(candidates),
+            )
         if not authorized:
             return self._result(
                 RagStatus.INSUFFICIENT_CONTEXT,
@@ -137,7 +145,10 @@ class GovernedRagRuntime:
                 retrieved_count=len(bounded),
             )
 
-        validation_error = self._validate_answer(answer, bounded)
+        try:
+            validation_error = self._validate_answer(answer, bounded)
+        except Exception:
+            validation_error = "invalid_provider_output"
         if validation_error:
             return self._result(
                 RagStatus.DENIED,

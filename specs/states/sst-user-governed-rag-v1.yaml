@@ -53,6 +53,8 @@ evidence:
     - test_unknown_provider_citation_is_rejected
     - test_prompt_injection_is_untrusted_corpus_data_and_cannot_expand_scope
     - test_source_retriever_and_provider_errors_are_sanitized
+    - test_invalid_source_record_fails_closed_with_sanitized_policy_error
+    - test_invalid_provider_payload_fails_closed_without_exposing_output
     - test_trace_contains_only_counts_codes_and_correlation
   smoke:
     - scripts/smoke_governed_rag.py
