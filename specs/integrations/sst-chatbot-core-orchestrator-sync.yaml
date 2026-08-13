@@ -27,6 +27,7 @@ participants:
       - retriever POCs and generated workspace context contracts
       - structured intent preparation before orchestrator handoff
       - audience access policy and safe disclosure implementation
+      - governed user-memory retrieval policy, ranking and grounding contracts
 sync_streams:
   core_contract_adoption:
     direction: 4uentes-ards-core -> sst-chatbot
@@ -112,11 +113,26 @@ sync_streams:
           - tests/test_audience_access.py
         execution_authority: none
         contains_business_data: false
+      - capability_id: retrieval-augmented-generation
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:33c3ba004dbb2bba5bd71779b17e68fbf0c6a56f2d1aa354fb8b224740a36f55
+        evidence:
+          - specs/capabilities/retrieval-augmented-generation.yaml
+          - specs/states/sst-user-governed-rag-v1.yaml
+          - tests/test_governed_rag.py
+          - tests/test_governed_rag_specs.py
+          - scripts/smoke_governed_rag.py
+        execution_authority: none
+        contains_business_data: false
     forbidden_payloads:
       - user_queries
       - assistant_responses
       - metric_values
       - tenant_or_person_identifiers
+      - retrieved_private_chunks
+      - grounded_answer_content
 rules:
   - 4uentes-ards-core is the source of canonical ARDS/SDD policies; sst-chatbot only adopts scoped local copies.
   - 4uentes-orchestor owns execution lifecycle after a handoff is accepted.
@@ -127,6 +143,7 @@ rules:
   - Audience reads are functional read-only work and never enter the orchestrator lifecycle.
   - Child capability evidence contains technical maturity only and never business data.
   - Every linked capability movement must keep the owner spec, capability link, and outbound evidence stream aligned.
+  - Governed RAG child evidence reports technical maturity only; private queries, chunks, answers and citations stay local to the runtime boundary.
 known_contract_drift:
   - id: orchestrator-inbound-server-operation-list
     status: blocked-local

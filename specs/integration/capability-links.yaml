@@ -9,14 +9,16 @@ control_plane:
   state_kind: "feature_state"
   state_id: "sst-chatbot"
   parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+  additional_parent_capability_ids:
+    - "retrieval-augmented-generation"
   final_state_authority: "4uentes-orchestor"
 activation:
   status: "active"
   established_by_request: "CR-SST-0082"
   request_scope: "control-plane link establishment only"
   capability_reconciliation:
-    status: "awaiting-next-control-plane-reconciliation"
-    request_id: null
+    status: "local-owner-evidence-ready"
+    request_id: "CR-SST-0155"
 delivery:
   mode: "owner-manifest-pull"
   manifest_ref: "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
@@ -68,5 +70,17 @@ capability_links:
     remote_binding_status: "awaiting-next-control-plane-reconciliation"
     execution_authority: "none"
     contains_business_data: false
+  - link_id: "sst-chatbot:retrieval-augmented-generation"
+    owner_capability_id: "retrieval-augmented-generation"
+    owner_spec_ref: "specs/capabilities/retrieval-augmented-generation.yaml"
+    owner_status: "active"
+    relationship: "child_evidence"
+    control_plane_parent_capability_id: "retrieval-augmented-generation"
+    evidence_ref: "specs/states/sst-user-governed-rag-v1.yaml"
+    movement_digest: "sha256:33c3ba004dbb2bba5bd71779b17e68fbf0c6a56f2d1aa354fb8b224740a36f55"
+    remote_binding_status: "awaiting-cr-sst-0155-readback"
+    execution_authority: "none"
+    contains_business_data: false
 documentation:
   - "docs/architecture/control-plane-capability-links.md"
+  - "docs/architecture/governed-user-memory-rag.md"

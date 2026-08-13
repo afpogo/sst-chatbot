@@ -4,6 +4,7 @@ Python repository for AI-driven development around LangChain, LangGraph, LangSmi
 
 ## Structure
 - `src/app/`: primary maintainable application package for future agents.
+- `src/app/governed_rag/`: governed, provider-agnostic user-memory retrieval kernel with deterministic fakes.
 - `src/sst_chatbot/`: existing reusable POC-promoted SST modules kept for compatibility.
 - `labs/`: notebooks and exploratory experiments.
 - `docs/`: human-readable ARDS/SDD documentation, ADRs, and playbooks.
@@ -22,6 +23,7 @@ Fill `.env` locally. Do not commit secrets.
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe scripts\ards_check.py
+.\.venv\Scripts\python.exe scripts\smoke_governed_rag.py
 .\.venv\Scripts\python.exe scripts\check.py
 ```
 

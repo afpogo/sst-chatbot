@@ -421,6 +421,14 @@ def validate_control_plane_link() -> list[str]:
     alias = link.get("alias", {})
     if alias.get("local_key") != "orchestrator_link" or alias.get("maps_to") != "control_plane_link":
         errors.append("control_plane_link local alias is invalid")
+    pending = link.get("pending_capability_reconciliation", {})
+    if pending.get("request_id") != "CR-SST-0155":
+        errors.append("Pending capability reconciliation must reference CR-SST-0155")
+    if pending.get("status") != "in-progress-owner-evidence-ready":
+        errors.append("Pending capability reconciliation status is stale")
+    pending_ref = pending.get("evidence_ref", "")
+    if not pending_ref or not (ROOT_DIR / pending_ref).exists():
+        errors.append("Pending capability reconciliation evidence does not exist")
     return errors
 
 
@@ -429,10 +437,19 @@ def validate_capability_links() -> list[str]:
     registry = load_yaml(ROOT_DIR / "specs" / "integration" / "capability-links.yaml")
     expected_capability_ids = {
         "audience-aware-context-governance",
+        "retrieval-augmented-generation",
         "sst-user-assistant",
         "sst-stakeholder-insights",
     }
     expected_parent_id = "capability.inbound.sst-chatbot-agent-handoff"
+    expected_parents = {
+        capability_id: (
+            "retrieval-augmented-generation"
+            if capability_id == "retrieval-augmented-generation"
+            else expected_parent_id
+        )
+        for capability_id in expected_capability_ids
+    }
     if registry.get("status") != "active":
         errors.append("Audience capability link registry must be active")
     control_plane = registry.get("control_plane", {})
@@ -446,8 +463,10 @@ def validate_capability_links() -> list[str]:
     if activation.get("established_by_request") != "CR-SST-0082":
         errors.append("Capability link registry must use the known establishment request")
     pending = activation.get("capability_reconciliation", {})
-    if pending.get("request_id") is not None:
-        errors.append("Pending capability reconciliation must not invent a request id")
+    if pending.get("request_id") != "CR-SST-0155":
+        errors.append("Capability reconciliation must reference CR-SST-0155")
+    if pending.get("status") != "local-owner-evidence-ready":
+        errors.append("Capability reconciliation status is stale")
 
     delivery = registry.get("delivery", {})
     if delivery.get("mode") != "owner-manifest-pull":
@@ -491,7 +510,7 @@ def validate_capability_links() -> list[str]:
             errors.append(f"Capability link owner status drift: {capability_id}")
         if link.get("owner_status") != "active":
             errors.append(f"Linked audience capability must be active: {capability_id}")
-        if link.get("control_plane_parent_capability_id") != expected_parent_id:
+        if link.get("control_plane_parent_capability_id") != expected_parents[capability_id]:
             errors.append(f"Capability link parent mismatch: {capability_id}")
         if link.get("execution_authority") != "none":
             errors.append(f"Capability link has execution authority: {capability_id}")
@@ -619,7 +638,7 @@ def validate_audience_access() -> list[str]:
     child_stream = sync.get("sync_streams", {}).get("child_capability_evidence", {})
     child_evidence = child_stream.get("capabilities", [])
     child_by_id = {item.get("capability_id"): item for item in child_evidence}
-    if set(child_by_id) != capability_ids or len(child_evidence) != len(capability_ids):
+    if not capability_ids.issubset(set(child_by_id)) or len(child_by_id) != len(child_evidence):
         errors.append("Control-plane child capability inventory is incomplete or duplicated")
     for capability_id in capability_ids:
         item = child_by_id.get(capability_id, {})
@@ -638,6 +657,53 @@ def validate_audience_access() -> list[str]:
     return errors
 
 
+def validate_governed_rag() -> list[str]:
+    errors: list[str] = []
+    capability_path = ROOT_DIR / "specs/capabilities/retrieval-augmented-generation.yaml"
+    capability = load_yaml(capability_path)
+    if capability.get("status") != "active":
+        errors.append("Governed RAG capability must be active")
+    local = capability.get("local_implementation", {})
+    if local.get("status") != "implemented-local":
+        errors.append("Governed RAG local implementation evidence is missing")
+    for group in ("code", "tests"):
+        for evidence_ref in local.get(group, []):
+            if not (ROOT_DIR / evidence_ref).exists():
+                errors.append(f"Governed RAG evidence does not exist: {evidence_ref}")
+    for key in ("smoke", "state_ref", "owner_doc_ref"):
+        evidence_ref = local.get(key, "")
+        if not evidence_ref or not (ROOT_DIR / evidence_ref).exists():
+            errors.append(f"Governed RAG local ref does not exist: {key}={evidence_ref}")
+
+    state_path = ROOT_DIR / "specs/states/sst-user-governed-rag-v1.yaml"
+    state = load_yaml(state_path)
+    state_index = load_yaml(ROOT_DIR / "specs/states/00-index.yaml")
+    indexed = {item.get("id"): item for item in state_index.get("states", [])}
+    if state.get("status") != "in-progress":
+        errors.append("Governed RAG state must remain in-progress until integration")
+    if indexed.get(state.get("id"), {}).get("status") != state.get("status"):
+        errors.append("Governed RAG state index status mismatch")
+    evidence = state.get("evidence", {})
+    refs: list[str] = []
+    for group in ("code", "tests", "smoke", "owner_docs"):
+        refs.extend(evidence.get(group, []))
+    for evidence_ref in refs:
+        if not (ROOT_DIR / evidence_ref).exists():
+            errors.append(f"Governed RAG state evidence does not exist: {evidence_ref}")
+    tests_source = "\n".join(
+        (ROOT_DIR / evidence_ref).read_text(encoding="utf-8")
+        for evidence_ref in evidence.get("tests", [])
+    )
+    for test_case in evidence.get("test_cases", []):
+        if f"def {test_case}(" not in tests_source:
+            errors.append(f"Governed RAG test evidence is stale: {test_case}")
+    if "scripts/smoke_governed_rag.py" not in (
+        ROOT_DIR / "scripts/check.py"
+    ).read_text(encoding="utf-8"):
+        errors.append("Repository check does not execute the governed RAG smoke")
+    return errors
+
+
 def main() -> int:
     errors = []
     errors.extend(require_paths())
@@ -649,6 +715,7 @@ def main() -> int:
     errors.extend(validate_control_plane_link())
     errors.extend(validate_capability_links())
     errors.extend(validate_audience_access())
+    errors.extend(validate_governed_rag())
 
     if errors:
         print("ARDS/SDD check failed:")
