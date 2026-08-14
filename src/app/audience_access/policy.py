@@ -86,6 +86,11 @@ def _scope_matches(principal: PrincipalContext, envelope: SafeContextEnvelope) -
     )
 
 
+def _contains_personal_identifier(value: Any) -> bool:
+    rendered = json.dumps(value, sort_keys=True, default=str)
+    return any(pattern.search(rendered) for pattern in _PERSONAL_IDENTIFIER_PATTERNS)
+
+
 class AudiencePolicyEngine:
     """Fail-closed authorization and output disclosure policy."""
 
@@ -164,10 +169,13 @@ class AudiencePolicyEngine:
             elif principal.audience is Audience.SST_STAKEHOLDER:
                 if STAKEHOLDER_ENTITLEMENT not in principal.entitlements:
                     return self._deny("missing_entitlement", "global metrics entitlement is absent")
-                if source is not SafeContextSource.APPROVED_ANALYTICS:
+                if source not in {
+                    SafeContextSource.APPROVED_ANALYTICS,
+                    SafeContextSource.APPROVED_METHODOLOGY,
+                }:
                     return self._deny(
                         "unapproved_source",
-                        "stakeholder context must come from approved analytics",
+                        "stakeholder context must come from an approved source",
                     )
                 if classification not in {
                     DataClassification.PUBLIC,
@@ -185,6 +193,11 @@ class AudiencePolicyEngine:
                     return self._deny(
                         "scope_mismatch",
                         "stakeholder data products must be global and de-identified",
+                    )
+                if _contains_personal_identifier(envelope.payload):
+                    return self._deny(
+                        "personal_identifier_detected",
+                        "stakeholder context must not contain personal identifiers",
                     )
             else:
                 return self._deny("unknown_audience", "principal audience is unknown")

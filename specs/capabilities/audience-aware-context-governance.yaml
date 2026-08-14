@@ -29,6 +29,10 @@ access_matrix:
     source: approved_analytics
     allowed_classifications: [public, derived_safe]
     scope: global_application_only
+  - audience: sst_stakeholder
+    source: approved_methodology
+    allowed_classifications: [public, derived_safe]
+    scope: global_application_only
 deny_by_default: true
 absolute_denials: [restricted, secret]
 prompt_authority: none
@@ -49,7 +53,8 @@ local_implementation:
     - src/app/audience_access/policy.py
   tests:
     - tests/test_audience_access.py
+    - tests/test_stakeholder_rag.py
 validation:
   commands:
-    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py tests/test_stakeholder_rag.py
     - .\.venv\Scripts\python.exe scripts/ards_check.py

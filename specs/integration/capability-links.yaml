@@ -44,7 +44,7 @@ capability_links:
     relationship: "child_evidence"
     control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
     evidence_ref: "specs/states/sst-chatbot-audience-access-v1.yaml"
-    movement_digest: "sha256:9dee70856ee092610aa39483df7dbfac4531736c8e8a77481c6d82e53e12a27b"
+    movement_digest: "sha256:a8e51e94623b185ecfed4b48fe04c35207bd8d401c29b245427a63cf7e7e7899"
     remote_binding_status: "awaiting-next-control-plane-reconciliation"
     execution_authority: "none"
     contains_business_data: false
@@ -55,7 +55,7 @@ capability_links:
     relationship: "child_evidence"
     control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
     evidence_ref: "specs/states/sst-chatbot-audience-access-v1.yaml"
-    movement_digest: "sha256:0d0054af09e9de7c06b3edd7df2f0f2d2fdfcc54d8e9f961851b43487a30b764"
+    movement_digest: "sha256:4828e94d42dffbafd54d311ee1d931785d09d9a48eb3ef859a85cfb8a0a3781f"
     remote_binding_status: "awaiting-next-control-plane-reconciliation"
     execution_authority: "none"
     contains_business_data: false
@@ -65,8 +65,8 @@ capability_links:
     owner_status: "active"
     relationship: "child_evidence"
     control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
-    evidence_ref: "specs/states/sst-chatbot-audience-access-v1.yaml"
-    movement_digest: "sha256:9d9cca2ee8bd14df85b8f6e8fdf2fa3876380e3015a5b93e0b7c0d0c15a527fb"
+    evidence_ref: "specs/states/sst-stakeholder-metrics-rag-v1.yaml"
+    movement_digest: "sha256:079b7a0893c8178b7f367069ad84fbbe43c6b9a3185abe8aa218a3b4d748db98"
     remote_binding_status: "awaiting-next-control-plane-reconciliation"
     execution_authority: "none"
     contains_business_data: false
@@ -84,3 +84,4 @@ capability_links:
 documentation:
   - "docs/architecture/control-plane-capability-links.md"
   - "docs/architecture/governed-user-memory-rag.md"
+  - "docs/architecture/grounded-stakeholder-metrics-rag.md"

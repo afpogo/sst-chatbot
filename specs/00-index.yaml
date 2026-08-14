@@ -110,6 +110,9 @@ entries:
     - id: sst-chatbot-audience-access-v1
       path: specs/states/sst-chatbot-audience-access-v1.yaml
       status: in-progress
+    - id: sst-stakeholder-metrics-rag-v1
+      path: specs/states/sst-stakeholder-metrics-rag-v1.yaml
+      status: in-progress
     - id: sst-user-governed-rag-v1
       path: specs/states/sst-user-governed-rag-v1.yaml
       status: in-progress
