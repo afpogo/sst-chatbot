@@ -102,6 +102,7 @@ Inherited policies:
 - `agent-delegation-policy`
 - `agent-context-management-policy`
 - `agent-architecture-boundary-policy`
+- `visual-documentation-as-code-policy`
 - `human-doc-language`
 - `owner-documentation-authority-policy`
 - `control-plane-link-policy`
