@@ -12,6 +12,7 @@ manifests individuales en `specs/policies/`.
 
 ## Policies adoptadas
 
+- `visual-documentation-as-code-policy`
 - `agent-model-selection-policy`
 - `agent-resource-degradation-policy`
 - `agent-task-atomization-policy`
@@ -29,6 +30,12 @@ automatizadas en `tests/test_chat_http_runtime.py`.
 
 ## Reglas locales
 
+- Los mapas normativos nuevos o materialmente modificados deben usar Mermaid,
+  metadata `visual_map`, source refs owner y fallback textual adyacente.
+- Los mapas son vistas derivadas; `specs/**` y contratos owner conservan
+  autoridad si existe una contradiccion.
+- No incluir secretos, tokens, cookies, PII, prompts privados ni valores
+  runtime en mapas.
 - Los nombres de modelos son aliases resueltos por el entorno.
 - La documentación humana nueva se escribe en español; IDs, schemas, comandos
   y contratos técnicos conservan su forma estable.

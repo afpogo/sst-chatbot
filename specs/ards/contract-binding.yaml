@@ -11,6 +11,7 @@ core_contract:
   core_ref: "4uentes-ards-core@2ad4e0f"
   adoption_mode: "scoped-local-adoption"
   adopted_policy_ids:
+    - "visual-documentation-as-code-policy"
     - "agent-model-selection-policy"
     - "agent-resource-degradation-policy"
     - "agent-task-atomization-policy"

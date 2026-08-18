@@ -2,7 +2,7 @@ schema_version: "1.0"
 version: 2
 kind: "ards_sdd_agent_policy_registry"
 status: "active"
-updated_at: "2026-08-09"
+updated_at: "2026-08-17"
 purpose: >
   Local adoption registry for the canonical ARDS/SDD common policy runtime
   inherited from 4uentes-ards-core. Current changes remain pending a new
@@ -58,6 +58,10 @@ local_adoption:
     command: ".\\.venv\\Scripts\\python.exe scripts\\check.py"
 
 policies:
+  - id: "visual-documentation-as-code-policy"
+    policy_class: "core-profile-scoped"
+    adoption_status: "adopted"
+    manifest: "specs/policies/adoptions/visual-documentation-as-code-policy.yaml"
   - id: "http-qa-harness-policy"
     policy_class: "core-profile-scoped"
     adoption_status: "adopted"
