@@ -1,0 +1,139 @@
+name: Build and Publish Development Image
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/afpogo/sst-chatbot
+  INFRA_REPO: afpogo/sst-4uentes-infra
+  INFRA_BRANCH: develop
+  INFRA_IMAGE_NAME: afpogo/sst-chatbot
+
+jobs:
+  build-publish-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out chatbot
+        uses: actions/checkout@v4
+
+      - name: Set immutable image tag
+        shell: bash
+        run: echo "IMAGE_TAG=develop-${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+
+      - name: Validate infra write token
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          SST_INFRA_WRITE_TOKEN: ${{ secrets.SST_INFRA_WRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "${SST_INFRA_WRITE_TOKEN:-}" || {
+            echo "SST_INFRA_WRITE_TOKEN is required to update the development GitOps tag." >&2
+            exit 1
+          }
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install validation dependencies
+        run: python -m pip install --requirement requirements.txt
+
+      - name: Run owner gate
+        run: python scripts/check.py
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build development image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:develop
+
+      - name: Check out infra
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          ref: ${{ env.INFRA_BRANCH }}
+          token: ${{ secrets.SST_INFRA_WRITE_TOKEN }}
+          path: sst-4uentes-infra
+
+      - name: Update development GitOps image tag
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: sst-4uentes-infra
+        run: |
+          set -euo pipefail
+          file="k8s-manifests/overlays/development/kustomization.yml"
+          if ! grep -q "name: ${INFRA_IMAGE_NAME}" "$file"; then
+            echo "The CR-SST-0178 infra PR has not introduced ${INFRA_IMAGE_NAME} yet; image publication is complete and no GitOps file is changed."
+            exit 0
+          fi
+          update_tag() {
+            node <<'NODE'
+          const fs = require('fs');
+          const file = 'k8s-manifests/overlays/development/kustomization.yml';
+          const imageName = process.env.INFRA_IMAGE_NAME;
+          const imageTag = process.env.IMAGE_TAG;
+          const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+          let inTarget = false;
+          let found = false;
+          for (let index = 0; index < lines.length; index += 1) {
+            const match = lines[index].match(/^(\s*)-\s*name:\s*(\S+)\s*$/);
+            if (match) {
+              inTarget = match[2] === imageName;
+              found ||= inTarget;
+            }
+            if (inTarget && /^\s*newTag:\s*/.test(lines[index])) {
+              lines[index] = lines[index].replace(/newTag:\s*.*/, `newTag: ${imageTag}`);
+              inTarget = false;
+            }
+          }
+          if (!found) throw new Error(`Image entry not found for ${imageName}`);
+          fs.writeFileSync(file, `${lines.join('\n').replace(/\n+$/, '')}\n`);
+          NODE
+          }
+
+          git config user.name "sst-ci-bot"
+          git config user.email "sst-ci-bot@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "${INFRA_BRANCH}"
+            git rebase "origin/${INFRA_BRANCH}"
+            update_tag
+            if git diff --quiet -- "$file"; then
+              exit 0
+            fi
+            git add "$file"
+            git commit -m "chore(development): update sst-chatbot image ${IMAGE_TAG}"
+            if git push origin "HEAD:${INFRA_BRANCH}"; then
+              exit 0
+            fi
+            git reset --hard "origin/${INFRA_BRANCH}"
+            sleep $((attempt * 5))
+          done
+          echo "Failed to update the chatbot image tag after retries." >&2
+          exit 1

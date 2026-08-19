@@ -20,12 +20,32 @@ Si el provider falla después de emitir deltas, el adapter HTTP termina con un
 registro `error` que conserva sólo el `correlation_id`; no emite `completed` ni
 expone el detalle de la excepción o secretos del provider.
 
+El proceso expone `GET /healthz` exclusivamente como señal técnica de vida y
+preparación. No autentica usuarios, no revela configuración y responde sólo
+`{"status":"ok"}`. Kubernetes consume esta ruta dentro del cluster; no existe
+un Ingress público directo para el chatbot.
+
+La imagen de desarrollo se construye desde `Dockerfile`, ejecuta con UID/GID
+no privilegiado `10001` y contiene únicamente el runtime HTTP y sus dependencias
+de verificación JWT. Al fusionar en `develop`, CI publica tags inmutables
+`develop-<sha>` y actualiza el owner GitOps con ese tag. La configuración y los
+secretos M2M se inyectan en Kubernetes; nunca se incluyen en la imagen.
+
 Arranque local:
 
 ```powershell
 $env:PYTHONPATH='src'
 $env:AUTH_JWKS_URL='http://localhost:4000/.well-known/jwks.json'
 python -m app.chat_runtime.http_server --port 8091
+```
+
+Construcción local de la imagen:
+
+```powershell
+docker build -t sst-chatbot:cr-sst-0178 .
+docker run --rm -p 8091:8091 `
+  -e AUTH_JWKS_URL=http://host.docker.internal:4000/.well-known/jwks.json `
+  sst-chatbot:cr-sst-0178
 ```
 
 La solicitud reproducible está en `httpPruebas/chat-turns.http`.

@@ -7,7 +7,7 @@ import urllib.request
 from uuid import UUID
 from http.server import ThreadingHTTPServer
 
-from app.chat_runtime.http_server import TURN_PATH, create_handler
+from app.chat_runtime.http_server import HEALTH_PATH, TURN_PATH, create_handler
 
 
 def _request(port: int, *, token: str = "test-m2m", payload=None):
@@ -29,6 +29,36 @@ def _payload():
         "text": "hola",
         "principal": {"user_id": "user-1", "account_id": "account-1", "tenant_id": "tenant-1"},
     }
+
+
+def test_health_is_available_without_service_credentials():
+    server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(service_token="test-m2m"))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{server.server_port}{HEALTH_PATH}",
+            timeout=2,
+        ) as response:
+            assert response.status == 200
+            assert response.headers["Cache-Control"] == "no-store"
+            assert json.load(response) == {"status": "ok"}
+    finally:
+        server.shutdown()
+
+
+def test_unknown_get_route_is_not_found():
+    server = ThreadingHTTPServer(("127.0.0.1", 0), create_handler(service_token="test-m2m"))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{server.server_port}/", timeout=2)
+            assert False, "unknown GET must fail"
+        except urllib.error.HTTPError as error:
+            assert error.code == 404
+    finally:
+        server.shutdown()
 
 
 def test_turn_streams_delta_then_completed():

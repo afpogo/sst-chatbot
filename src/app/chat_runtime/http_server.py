@@ -13,6 +13,7 @@ from app.service_auth import JwksServiceTokenVerifier
 from app.service_auth import ServiceCredentialError
 
 TURN_PATH = "/internal/v1/chat/turns"
+HEALTH_PATH = "/healthz"
 
 
 def _turn_request(payload: dict[str, Any]) -> TurnRequest:
@@ -62,6 +63,18 @@ def create_handler(runtime=None, service_token: str | None = None, token_verifie
             body = json.dumps({"error": {"code": code, "message": message}}).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self) -> None:  # noqa: N802
+            if self.path != HEALTH_PATH:
+                self._json_error(HTTPStatus.NOT_FOUND, "not_found", "Route not found")
+                return
+            body = b'{"status":"ok"}'
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
