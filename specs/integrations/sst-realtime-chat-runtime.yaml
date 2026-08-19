@@ -7,7 +7,7 @@ project: sst-chatbot
 orchestrator_link:
   orchestrator_repo: 4uentes-orchestor
   work_origin: orchestrator-request
-  request_ids: [CR-SST-0167, CR-SST-0168, CR-SST-0170]
+  request_ids: [CR-SST-0167, CR-SST-0168, CR-SST-0170, CR-SST-0178]
   correlation_id: SST-7
 
 inbound_turns:
@@ -48,6 +48,22 @@ service_credentials:
   storage: process_memory_only
   refresh_token: forbidden
   secrets_in_logs: forbidden
+
+deployment:
+  image_owner: sst-chatbot
+  dockerfile: Dockerfile
+  runtime_user: "10001:10001"
+  command: python -m app.chat_runtime.http_server
+  port: 8091
+  health:
+    endpoint: GET /healthz
+    response: '{"status":"ok"}'
+    auth: none
+    exposure: cluster-internal-only
+  public_ingress: forbidden
+  immutable_development_tag: develop-<git-sha-12>
+  configuration_source: environment
+  secret_source: external-kubernetes-secret
 
 limitations:
   - EchoChatRuntime is deterministic local/dev behavior, not a production LLM provider.
