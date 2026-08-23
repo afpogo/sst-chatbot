@@ -7,7 +7,7 @@ project: sst-chatbot
 orchestrator_link:
   orchestrator_repo: 4uentes-orchestor
   work_origin: orchestrator-request
-  request_ids: [CR-SST-0167, CR-SST-0168, CR-SST-0170, CR-SST-0178]
+  request_ids: [CR-SST-0167, CR-SST-0168, CR-SST-0170, CR-SST-0178, CR-SST-0194]
   correlation_id: SST-7
 
 inbound_turns:
@@ -21,7 +21,7 @@ inbound_turns:
     scope: chat:process
     token_use: service
     jwks_validation: required
-  events: [delta, completed, error]
+  events: [delta, memory_proposal, completed, error]
   partial_failure: error-without-completed
   canonical_conversation_persistence: forbidden
 
@@ -42,6 +42,13 @@ outbound_handoff:
   scope: agent-handoff:submit
   automatic_retry: forbidden
   canonical_receipt_owner: sst-bend
+
+outbound_user_memory:
+  contract: specs/integrations/sst-governed-user-memory-chat.yaml
+  client: BendUserMemoryClient
+  scopes: [user-memory:recall, user-memory:propose]
+  canonical_memory_owner: sst-bend
+  automatic_acceptance: forbidden
 
 service_credentials:
   grant_type: client_credentials

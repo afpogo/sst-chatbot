@@ -115,13 +115,19 @@ local_implementation:
     - src/app/governed_rag/retriever.py
     - src/app/governed_rag/runtime.py
     - src/app/governed_rag/fakes.py
+    - src/app/user_memory/contracts.py
+    - src/app/user_memory/bend_client.py
+    - src/app/user_memory/source.py
+    - src/app/user_memory/runtime.py
   tests:
     - tests/test_governed_rag.py
     - tests/test_governed_rag_specs.py
+    - tests/test_user_memory_integration.py
   smoke: scripts/smoke_governed_rag.py
   state_ref: specs/states/sst-user-governed-rag-v1.yaml
   owner_doc_ref: docs/architecture/governed-user-memory-rag.md
-  integration_status: not-connected-to-chat-runtime
+  integration_status: composed-with-chat-runtime-by-cr-sst-0194
+  integration_ref: specs/integrations/sst-governed-user-memory-chat.yaml
 control_plane_link:
   repo: 4uentes-orchestor
   request_id: CR-SST-0155
@@ -129,9 +135,9 @@ control_plane_link:
   capability_id: retrieval-augmented-generation
   source_of_truth: false
 non_goals:
-  - Canonical user-memory persistence.
+  - Owning canonical user-memory persistence or review decisions.
   - Database or vector-store adoption.
   - Real or paid LLM provider integration.
-  - HTTP, Socket.IO or current chat runtime integration.
-  - Raw chat or event ingestion.
-  - Memory writes, orchestrator handoffs or stakeholder metrics.
+  - Raw chat ingestion.
+  - Automatic memory acceptance, correction, archive or deletion.
+  - Orchestrator handoffs or stakeholder metrics.

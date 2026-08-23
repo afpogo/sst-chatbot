@@ -67,15 +67,15 @@ ausente o inventada produce una denegación sin exponer la salida parcial.
 
 ## Estado de integración
 
-La implementación vive en `src/app/governed_rag/` y usa fakes deterministas.
-No está conectada a `ProviderChatRuntime` ni a `/internal/v1/chat/turns`. Esa
-integración requiere un request posterior que defina:
+La implementación base vive en `src/app/governed_rag/`. CR-SST-0194 agrega en
+`src/app/user_memory/` la composición con el runtime de chat, el source de Bend,
+el audit de citas y el handoff de candidatos pendientes. El contrato y mapa
+actuales están en
+`docs/architecture/governed-user-memory-chat-integration.md`.
 
-- owner y contrato de la memoria canónica promovida por SST;
-- transporte del `PrincipalContext` completo;
-- estrategia de cancelación y presupuesto compartido con el chat;
-- custodia de secretos y proveedor real;
-- almacenamiento vectorial y filtros obligatorios en la consulta física.
+Siguen pendientes la publicación conjunta de los owners, el smoke cross-repo y
+la selección de un provider real. El chatbot no adquiere persistencia canónica,
+review de memoria ni autorización de identidad.
 
 ## Validación
 
