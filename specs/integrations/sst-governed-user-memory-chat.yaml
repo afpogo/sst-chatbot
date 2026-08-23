@@ -1,0 +1,64 @@
+version: 1
+kind: integration
+id: sst-governed-user-memory-chat
+status: implemented-local
+project: sst-chatbot
+
+orchestrator_link:
+  orchestrator_repo: 4uentes-orchestor
+  work_origin: orchestrator-request
+  request_ids: [CR-SST-0194]
+  initiative_id: INIT-SST-0010
+
+inbound_dependencies:
+  auth:
+    owner: 4uentes-auth
+    capability: chatbot-user-memory-service-grants-v1
+    audience: sst-api
+    exact_scopes: [user-memory:recall, user-memory:propose]
+  memory:
+    owner: sst-bend
+    capability: chatbot-user-memory-ports-v1
+    endpoints:
+      - POST /4uentes/v1/internal/user-memory/recall-candidates
+      - POST /4uentes/v1/internal/user-memory/recalls
+      - POST /4uentes/v1/internal/user-memory/proposals
+
+composition:
+  runtime: GovernedMemoryChatRuntime
+  source_adapter: BendConversationMemorySource
+  client: BendUserMemoryClient
+  proposal_contract: MemoryProposalBuilderPort
+  sequence:
+    - fetch_bend_derived_scope_and_candidates
+    - verify_scope_matches_validated_turn
+    - apply_local_governed_rag_policy
+    - rank_and_bound_provider_context
+    - validate_grounded_claims_and_citations
+    - persist_metadata_only_recall_audit
+    - build_optional_structured_candidate
+    - handoff_candidate_for_user_review
+    - complete_turn
+
+authority:
+  chatbot: [retrieve_authorized_context, produce_optional_candidate]
+  bend: [resolve_identity_scope, persist_recall_audit, assign_proposal_status, own_canonical_memory]
+  user: [accept_or_reject_proposal]
+  provider: [return_grounded_claims, suggest_structured_candidate]
+
+invariants:
+  - The chatbot sends only conversationRef and correlationId to resolve memory scope.
+  - Bend-derived tenant, user and application must match the already validated inbound turn.
+  - PrincipalContext never reaches Auth, the Bend request body or the provider.
+  - Recall and proposal use separate exact M2M grants.
+  - Provider output, prompts, credentials and raw messages are forbidden in trace metadata.
+  - A candidate can only become needs_user_review; automatic acceptance is impossible.
+  - A recall-backed answer is not completed until its recall audit and optional proposal handoff succeed.
+
+validation:
+  tests: [tests/test_user_memory_integration.py]
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_user_memory_integration.py
+    - .\.venv\Scripts\python.exe scripts/check.py
+
+owner_documentation: docs/architecture/governed-user-memory-chat-integration.md

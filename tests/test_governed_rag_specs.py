@@ -38,7 +38,13 @@ def test_capability_contract_requires_authorization_before_ranking() -> None:
     assert "before ranking" in rules
     assert "no access-granting authority" in rules
     assert "fabricated citations fail closed" in rules
-    assert "HTTP, Socket.IO or current chat runtime integration." in capability["non_goals"]
+    assert capability["local_implementation"]["integration_status"] == (
+        "composed-with-chat-runtime-by-cr-sst-0194"
+    )
+    assert capability["local_implementation"]["integration_ref"] == (
+        "specs/integrations/sst-governed-user-memory-chat.yaml"
+    )
+    assert "Automatic memory acceptance, correction, archive or deletion." in capability["non_goals"]
 
 
 def test_memory_and_connector_specs_preserve_scope_and_read_only_boundary() -> None:

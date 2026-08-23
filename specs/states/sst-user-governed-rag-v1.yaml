@@ -4,7 +4,7 @@ kind: feature_state
 id: sst-user-governed-rag-v1
 status: in-progress
 title: Governed read-only RAG for SST user memory V1
-updated_at: "2026-08-13"
+updated_at: "2026-08-23"
 owner: sst-chatbot
 control_plane_link:
   repo: 4uentes-orchestor
@@ -21,16 +21,19 @@ implemented:
   - Bounded provider context and structured claim/citation validation.
   - Metadata-only decision trace with sanitized error codes.
   - Positive and negative fake-provider smoke.
+  - Bend M2M adapter with separate recall and proposal grants.
+  - Turn-bound source that cross-checks Bend-derived scope against the validated turn.
+  - Composed chat runtime with recall audit and review-only proposal handoff.
 pending:
-  - Approve the canonical SST source contract for promoted user-memory records.
-  - Connect the governed runtime to chat only through a separate integration request.
+  - Merge and publish the Auth, Bend and chatbot owner contracts from CR-SST-0194.
+  - Execute the synthetic cross-repo smoke after all owner artifacts are available together.
   - Evaluate a real provider and vector store only after source ownership and secret custody are approved.
 non_goals:
   - Read raw chats or operational events.
   - Persist canonical memory or vectors.
   - Call OpenAI or any external provider.
-  - Change the HTTP or Socket.IO runtime.
-  - Emit memory writes or orchestrator handoffs.
+  - Automatically accept, correct, archive or delete memory.
+  - Emit orchestrator handoffs.
 evidence:
   code:
     - src/app/governed_rag/contracts.py
@@ -39,9 +42,14 @@ evidence:
     - src/app/governed_rag/retriever.py
     - src/app/governed_rag/runtime.py
     - src/app/governed_rag/fakes.py
+    - src/app/user_memory/contracts.py
+    - src/app/user_memory/bend_client.py
+    - src/app/user_memory/source.py
+    - src/app/user_memory/runtime.py
   tests:
     - tests/test_governed_rag.py
     - tests/test_governed_rag_specs.py
+    - tests/test_user_memory_integration.py
   test_cases:
     - test_policy_version_fails_before_source_retriever_and_provider
     - test_sensitive_question_fails_before_any_context_read
@@ -56,6 +64,9 @@ evidence:
     - test_invalid_source_record_fails_closed_with_sanitized_policy_error
     - test_invalid_provider_payload_fails_closed_without_exposing_output
     - test_trace_contains_only_counts_codes_and_correlation
+    - test_http_client_uses_separate_exact_grants_and_never_sends_principal_scope
+    - test_composed_runtime_audits_citations_and_hands_off_pending_proposal
+    - test_authoritative_scope_mismatch_fails_closed_before_provider
   smoke:
     - scripts/smoke_governed_rag.py
   owner_docs:
@@ -63,6 +74,8 @@ evidence:
     - specs/capabilities/retrieval-augmented-generation.yaml
     - specs/capabilities/user-activity-ards-memory.yaml
     - specs/capabilities/application-context-connector.yaml
+    - docs/architecture/governed-user-memory-chat-integration.md
+    - specs/integrations/sst-governed-user-memory-chat.yaml
   commands:
     - .\.venv\Scripts\python.exe -m pytest tests/test_governed_rag.py tests/test_governed_rag_specs.py
     - .\.venv\Scripts\python.exe scripts/smoke_governed_rag.py

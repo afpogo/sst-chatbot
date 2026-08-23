@@ -69,9 +69,12 @@ operational context
 ## RAG gobernado de memoria de usuario
 
 - Arquitectura owner: `docs/architecture/governed-user-memory-rag.md`.
+- Integración owner: `docs/architecture/governed-user-memory-chat-integration.md`.
 - Capability: `specs/capabilities/retrieval-augmented-generation.yaml`.
+- Contrato de integración: `specs/integrations/sst-governed-user-memory-chat.yaml`.
 - Estado local: `specs/states/sst-user-governed-rag-v1.yaml`.
-- El núcleo actual usa fakes y no conecta persistencia, vector store, chat realtime ni un proveedor real.
+- CR-SST-0194 compone recall y propuestas pendientes con Bend; el provider real,
+  el vector store y el smoke cross-repo continúan pendientes.
 
 ## RAG gobernado de métricas para stakeholders
 
