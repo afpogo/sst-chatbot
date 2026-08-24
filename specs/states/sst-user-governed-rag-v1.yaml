@@ -24,9 +24,9 @@ implemented:
   - Bend M2M adapter with separate recall and proposal grants.
   - Turn-bound source that cross-checks Bend-derived scope against the validated turn.
   - Composed chat runtime with recall audit and review-only proposal handoff.
+  - Published Auth, Bend and chatbot owner contracts for CR-SST-0194.
+  - Integrated signed-token smoke with authoritative Bend scope, recall audit and review-only proposal.
 pending:
-  - Merge and publish the Auth, Bend and chatbot owner contracts from CR-SST-0194.
-  - Execute the synthetic cross-repo smoke after all owner artifacts are available together.
   - Evaluate a real provider and vector store only after source ownership and secret custody are approved.
 non_goals:
   - Read raw chats or operational events.
@@ -69,6 +69,7 @@ evidence:
     - test_authoritative_scope_mismatch_fails_closed_before_provider
   smoke:
     - scripts/smoke_governed_rag.py
+    - scripts/serve_user_memory_smoke.py
   owner_docs:
     - docs/architecture/governed-user-memory-rag.md
     - specs/capabilities/retrieval-augmented-generation.yaml
@@ -79,4 +80,5 @@ evidence:
   commands:
     - .\.venv\Scripts\python.exe -m pytest tests/test_governed_rag.py tests/test_governed_rag_specs.py
     - .\.venv\Scripts\python.exe scripts/smoke_governed_rag.py
+    - .\.venv\Scripts\python.exe scripts/serve_user_memory_smoke.py
     - .\.venv\Scripts\python.exe scripts/check.py

@@ -73,8 +73,11 @@ el audit de citas y el handoff de candidatos pendientes. El contrato y mapa
 actuales están en
 `docs/architecture/governed-user-memory-chat-integration.md`.
 
-Siguen pendientes la publicación conjunta de los owners, el smoke cross-repo y
-la selección de un provider real. El chatbot no adquiere persistencia canónica,
+Los owners de Auth, Bend y chatbot ya fueron publicados. El smoke integrado
+CR-SST-0194 validó tokens firmados reales, scope reconstruido por Bend, recall
+auditado y una propuesta `needs_user_review`; usa un provider determinístico y
+se ejecuta con `scripts/serve_user_memory_smoke.py`. Sigue pendiente la
+selección de un provider real. El chatbot no adquiere persistencia canónica,
 review de memoria ni autorización de identidad.
 
 ## Validación
@@ -82,6 +85,7 @@ review de memoria ni autorización de identidad.
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_governed_rag.py tests/test_governed_rag_specs.py
 .\.venv\Scripts\python.exe scripts/smoke_governed_rag.py
+.\.venv\Scripts\python.exe scripts/serve_user_memory_smoke.py
 .\.venv\Scripts\python.exe scripts/check.py
 ```
 

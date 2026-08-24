@@ -122,7 +122,7 @@ sync_streams:
         owner: sst-chatbot
         capability_status: active
         local_status: implemented-local
-        movement_digest: sha256:12f09fc145898f218af870acb93b6e8528b1b158dd3d65368827b8c24a3af93f
+        movement_digest: sha256:9a06c39c6347646c35e5596e62ea20fd5c4b38677bee276e611aa3f8defa19f0
         evidence:
           - specs/capabilities/retrieval-augmented-generation.yaml
           - specs/states/sst-user-governed-rag-v1.yaml

@@ -73,8 +73,9 @@ operational context
 - Capability: `specs/capabilities/retrieval-augmented-generation.yaml`.
 - Contrato de integración: `specs/integrations/sst-governed-user-memory-chat.yaml`.
 - Estado local: `specs/states/sst-user-governed-rag-v1.yaml`.
-- CR-SST-0194 compone recall y propuestas pendientes con Bend; el provider real,
-  el vector store y el smoke cross-repo continúan pendientes.
+- CR-SST-0194 compone recall y propuestas pendientes con Bend; el smoke
+  cross-repo firmado ya pasó con provider determinístico. Continúan pendientes
+  el provider real y el vector store.
 
 ## RAG gobernado de métricas para stakeholders
 
