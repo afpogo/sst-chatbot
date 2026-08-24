@@ -1,0 +1,74 @@
+schema_version: "1.0"
+version: 1
+kind: feature_state
+id: sst-chatbot-audience-access-v1
+status: in-progress
+title: Governed audience access and safe disclosure V1
+updated_at: "2026-08-08"
+owner: sst-chatbot
+control_plane_link:
+  ref: specs/integration/control-plane-link.yaml
+  status_hint: active-local
+implemented:
+  - PrincipalContext and six-level DataClassification contracts.
+  - Fail-closed audience, classification, source, scope, and entitlement policy.
+  - Context minimization and metadata-only trace and audit projections.
+  - Structured output guard for personal identifiers, credential patterns, and unsupported metric claims.
+  - Closed monthly stakeholder metric catalog with a minimum cohort size of 10.
+  - StakeholderMetricsPort with a deterministic fake local adapter.
+  - Read-only sst_user and sst_stakeholder preparation without orchestrator handoff.
+  - Active owner-manifest capability links with repository-gate drift detection.
+pending:
+  - Integrate the contracts with an SST-owned backend boundary after that interface is approved.
+  - Replace the fake analytics adapter only after SST publishes a safe data-product contract.
+  - Reconcile child capability evidence through a new 4uentes-orchestor request.
+blocked:
+  - id: sst-backend-principal-transport
+    reason: SST has not assigned a runtime transport contract to this repository.
+  - id: approved-analytics-data-product
+    reason: The analytical source remains a safe abstract port for this phase.
+non_goals:
+  - Add sst_operator_admin or any third audience.
+  - Query SQL, accept free filters, or drill down by tenant.
+  - Read emails, conversations, contracts, people, or individual records.
+  - Create functional handoffs or execute business actions.
+  - Send business data or KPI values to 4uentes-orchestor.
+evidence:
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/policy.py
+    - src/app/audience_access/metrics.py
+    - src/app/audience_access/runtime.py
+  tests:
+    - tests/test_audience_access.py
+    - tests/test_audience_access_specs.py
+  test_cases:
+    - test_principal_identity_is_backend_asserted_and_user_scope_is_complete
+    - test_cross_scope_private_context_is_rejected
+    - test_prompt_cannot_spoof_audience_or_expand_scope
+    - test_private_own_context_is_allowed_and_minimized
+    - test_restricted_and_secret_context_never_reaches_provider_or_observability
+    - test_misclassified_credentials_are_still_denied
+    - test_credentials_in_user_text_never_reach_provider_or_metadata
+    - test_unknown_classification_and_source_are_denied
+    - test_stakeholder_reads_an_approved_global_metric_without_handoff
+    - test_stakeholder_conversation_rejects_raw_data_and_free_form_drill_down
+    - test_small_stakeholder_cohort_is_suppressed_before_provider
+    - test_metric_source_failure_and_missing_provenance_fail_closed
+    - test_stakeholder_catalog_rejects_raw_or_individual_data
+    - test_metric_queries_reject_free_filters_and_non_monthly_granularity
+    - test_module_adoption_has_only_the_module_id_dimension
+    - test_output_guard_rejects_identifiers_credentials_and_unbacked_claims
+    - test_output_guard_accepts_only_exact_snapshot_claims
+    - test_runtime_metric_catalog_matches_the_owner_capability
+    - test_audience_capabilities_are_active_with_local_evidence_separated
+    - test_control_plane_capability_inventory_contains_technical_evidence_only
+    - test_control_plane_link_is_active_without_inventing_a_new_reconciliation
+    - test_capability_links_track_owner_status_and_safe_evidence
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py
+    - .\.venv\Scripts\python.exe scripts/check.py
+control_plane_evidence:
+  ref: specs/integrations/sst-chatbot-core-orchestrator-sync.yaml
+  execution_authority: none
+  contains_business_data: false

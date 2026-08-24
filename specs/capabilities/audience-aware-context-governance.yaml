@@ -1,0 +1,60 @@
+version: 1
+kind: capability
+id: audience-aware-context-governance
+status: active
+title: Audience-aware context governance
+goal: Authorize, minimize, trace, and disclose model context according to an SST-asserted principal and a closed policy matrix.
+owner: sst-chatbot
+identity_authority: sst_backend
+execution_authority: none
+contracts:
+  - PrincipalContext
+  - DataClassification
+  - SafeContextEnvelope
+  - AccessDecision
+  - DisclosureDecision
+classification_catalog:
+  - public
+  - internal
+  - private
+  - derived_safe
+  - restricted
+  - secret
+access_matrix:
+  - audience: sst_user
+    source: sst_backend
+    allowed_classifications: [public, internal, private]
+    scope: exact_tenant_user_application
+  - audience: sst_stakeholder
+    source: approved_analytics
+    allowed_classifications: [public, derived_safe]
+    scope: global_application_only
+  - audience: sst_stakeholder
+    source: approved_methodology
+    allowed_classifications: [public, derived_safe]
+    scope: global_application_only
+deny_by_default: true
+absolute_denials: [restricted, secret]
+prompt_authority: none
+observability:
+  trace_policy: metadata_only
+  audit_policy: metadata_only
+  secrets_allowed: false
+  business_data_allowed: false
+output_guard:
+  structured_claims_required_for_metrics: true
+  reject_personal_identifiers: true
+  reject_credential_patterns: true
+  reject_unbacked_metrics: true
+local_implementation:
+  status: implemented-local
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/policy.py
+  tests:
+    - tests/test_audience_access.py
+    - tests/test_stakeholder_rag.py
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py tests/test_stakeholder_rag.py
+    - .\.venv\Scripts\python.exe scripts/ards_check.py

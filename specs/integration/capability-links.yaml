@@ -1,0 +1,88 @@
+schema_version: "1.0"
+version: 1
+kind: "control_plane_capability_links"
+id: "sst-chatbot-audience-capability-links"
+status: "active"
+owner: "sst-chatbot"
+control_plane:
+  repo: "4uentes-orchestor"
+  state_kind: "feature_state"
+  state_id: "sst-chatbot"
+  parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+  additional_parent_capability_ids:
+    - "retrieval-augmented-generation"
+  final_state_authority: "4uentes-orchestor"
+activation:
+  status: "active"
+  established_by_request: "CR-SST-0082"
+  request_scope: "control-plane link establishment only"
+  capability_reconciliation:
+    status: "local-owner-evidence-ready"
+    request_id: "CR-SST-0155"
+delivery:
+  mode: "owner-manifest-pull"
+  manifest_ref: "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
+  validation_gate: ".\\.venv\\Scripts\\python.exe scripts\\check.py"
+  checked_on_every_repository_gate: true
+  automatic_remote_push: false
+  remote_push_blocker: "The control-plane has not published an ingestion transport for child capability evidence."
+change_contract:
+  tracked_movements:
+    - capability_created
+    - capability_status_changed
+    - capability_contract_changed
+    - capability_evidence_changed
+  drift_policy: "fail-repository-gate"
+  payload_class: "technical_maturity_only"
+  execution_authority: "none"
+  contains_business_data: false
+capability_links:
+  - link_id: "sst-chatbot:audience-aware-context-governance"
+    owner_capability_id: "audience-aware-context-governance"
+    owner_spec_ref: "specs/capabilities/audience-aware-context-governance.yaml"
+    owner_status: "active"
+    relationship: "child_evidence"
+    control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+    evidence_ref: "specs/states/sst-chatbot-audience-access-v1.yaml"
+    movement_digest: "sha256:a8e51e94623b185ecfed4b48fe04c35207bd8d401c29b245427a63cf7e7e7899"
+    remote_binding_status: "awaiting-next-control-plane-reconciliation"
+    execution_authority: "none"
+    contains_business_data: false
+  - link_id: "sst-chatbot:sst-user-assistant"
+    owner_capability_id: "sst-user-assistant"
+    owner_spec_ref: "specs/capabilities/sst-user-assistant.yaml"
+    owner_status: "active"
+    relationship: "child_evidence"
+    control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+    evidence_ref: "specs/states/sst-chatbot-audience-access-v1.yaml"
+    movement_digest: "sha256:4828e94d42dffbafd54d311ee1d931785d09d9a48eb3ef859a85cfb8a0a3781f"
+    remote_binding_status: "awaiting-next-control-plane-reconciliation"
+    execution_authority: "none"
+    contains_business_data: false
+  - link_id: "sst-chatbot:sst-stakeholder-insights"
+    owner_capability_id: "sst-stakeholder-insights"
+    owner_spec_ref: "specs/capabilities/sst-stakeholder-insights.yaml"
+    owner_status: "active"
+    relationship: "child_evidence"
+    control_plane_parent_capability_id: "capability.inbound.sst-chatbot-agent-handoff"
+    evidence_ref: "specs/states/sst-stakeholder-metrics-rag-v1.yaml"
+    movement_digest: "sha256:079b7a0893c8178b7f367069ad84fbbe43c6b9a3185abe8aa218a3b4d748db98"
+    remote_binding_status: "awaiting-next-control-plane-reconciliation"
+    execution_authority: "none"
+    contains_business_data: false
+  - link_id: "sst-chatbot:retrieval-augmented-generation"
+    owner_capability_id: "retrieval-augmented-generation"
+    owner_spec_ref: "specs/capabilities/retrieval-augmented-generation.yaml"
+    owner_status: "active"
+    relationship: "child_evidence"
+    control_plane_parent_capability_id: "retrieval-augmented-generation"
+    evidence_ref: "specs/states/sst-user-governed-rag-v1.yaml"
+    movement_digest: "sha256:9a06c39c6347646c35e5596e62ea20fd5c4b38677bee276e611aa3f8defa19f0"
+    remote_binding_status: "awaiting-cr-sst-0194-integrated-qa-readback"
+    execution_authority: "none"
+    contains_business_data: false
+documentation:
+  - "docs/architecture/control-plane-capability-links.md"
+  - "docs/architecture/governed-user-memory-rag.md"
+  - "docs/architecture/governed-user-memory-chat-integration.md"
+  - "docs/architecture/grounded-stakeholder-metrics-rag.md"

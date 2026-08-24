@@ -1,0 +1,48 @@
+schema_version: "1.0"
+version: 1
+kind: "feature_state"
+id: "agent-runtime-core-v1"
+status: "in-progress"
+title: "Governed internal agent runtime core"
+updated_at: "2026-07-13"
+repository_intent: >
+  Convert governed application context into auditable memory, provider-agnostic
+  agent work, validated structured intents, and transport-neutral orchestrator
+  handoffs without owning production execution.
+control_plane_link:
+  ref: "specs/integration/control-plane-link.yaml"
+  status_hint: "implemented-local"
+implemented:
+  - "Canonical operation policy projection with allow, review, blocked, and unsupported decisions."
+  - "Append-only agent lifecycle with explicit transition validation."
+  - "Transport-agnostic OrchestratorPort."
+  - "Intent handoff coordinator using deterministic validation and a fake adapter."
+  - "Fake receipts remain review-only and never claim execution ownership."
+  - "Receipts are fingerprint-bound and human review evidence crosses the neutral port intact."
+in_progress:
+  - "Connect application context, prompt assembly, provider execution, and structured agent creation intent."
+  - "Persist lifecycle and operational memory behind replaceable stores."
+pending:
+  - "Adopt a real orchestrator adapter after the control-plane publishes its runtime contract."
+  - "Add HTTP QA harness only if this repo receives HTTP ownership."
+blocked:
+  - id: "production-orchestrator-transport"
+    reason: "Runtime transport remains owned and undefined by 4uentes-orchestor."
+    related_request: "CR-SST-0083"
+  - id: "orchestrator-inbound-server-operation-list"
+    reason: "The control-plane inbound draft still lists server operations that this producer blocks."
+    local_policy: "specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml"
+non_goals:
+  - "Production queueing, retries, scheduling, or execution audit."
+  - "Direct SST, workspace, filesystem, or infrastructure mutation."
+  - "Treating provider output or fake receipts as accepted business state."
+evidence:
+  code:
+    - "src/app/operation_policy.py"
+    - "src/app/agents/lifecycle.py"
+    - "src/app/orchestrator/port.py"
+    - "src/app/orchestrator/service.py"
+  tests:
+    - "tests/test_operation_policy.py"
+    - "tests/test_agent_lifecycle.py"
+    - "tests/test_orchestrator_service.py"

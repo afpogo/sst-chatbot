@@ -18,6 +18,7 @@ dependencies = [
     "pydantic",
     "pytest",
     "PyYAML",
+    "PyJWT[crypto]",
 ]
 
 [project.optional-dependencies]

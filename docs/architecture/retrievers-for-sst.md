@@ -19,7 +19,16 @@ SST needs retrieval that also understands:
 - source traceability;
 - security constraints.
 
-The retriever layer gives us a place to combine those rules without exposing the storage engine to the rest of the app.
+The retriever layer combines relevance strategies without exposing the storage engine to the rest of the app. Authorization remains a separate earlier boundary: the retriever receives only an already-authorized projection and cannot grant access.
+
+## Límite promovido por CR-SST-0155
+
+El contrato mantenible vive en `src/app/governed_rag/ports.py`. Su
+`RetrieverPort` recibe exclusivamente `AuthorizedChunk`; tenant, usuario,
+aplicación, entitlements, clasificación, fuente, estado, indexabilidad y
+contenido sensible ya fueron evaluados por el policy gate. Los filtros físicos
+de un futuro vector store son defensa en profundidad y no reemplazan esa
+decisión determinística.
 
 ## Search Strategies
 - `similarity`: good default for finding the closest matching chunks.
@@ -29,7 +38,7 @@ The retriever layer gives us a place to combine those rules without exposing the
 
 ## Retriever configuration contract (RAF/POC)
 
-The POC in `tag_poc.py` uses a small immutable configuration object for retrieval behavior:
+The POC in `src/sst_chatbot/rag_poc.py` uses a small immutable configuration object for retrieval behavior:
 
 ```python
 @dataclass(frozen=True)

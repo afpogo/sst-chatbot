@@ -18,6 +18,9 @@ def main() -> int:
     commands = [
         [sys.executable, "scripts/ards_check.py"],
         [sys.executable, "-m", "pytest"],
+        [sys.executable, "scripts/smoke_governed_rag.py"],
+        [sys.executable, "scripts/smoke_stakeholder_rag.py"],
+        [sys.executable, "scripts/smoke_llm_provider_connection.py"],
     ]
 
     for command in commands:

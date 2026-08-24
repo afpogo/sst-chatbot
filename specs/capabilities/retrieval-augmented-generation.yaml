@@ -1,7 +1,7 @@
 version: 1
 kind: capability
 id: retrieval-augmented-generation
-status: draft
+status: active
 title: Retrieval augmented generation for SST agents
 goal: Add private, recent, and workspace-scoped SST context to agent responses without coupling SST to a provider or vector database.
 layers:
@@ -18,7 +18,7 @@ layers:
   indexing:
     description: Split documents into chunks that preserve source metadata.
   retrieval:
-    description: Retrieve relevant chunks through a retriever contract after applying workspace and permission filters.
+    description: Retrieve relevant chunks only after deterministic scope, permission, classification, source and content-safety authorization.
   generation:
     description: Inject retrieved context into a prompt and generate an answer with sources.
 vector_retrieval_lifecycle:
@@ -29,11 +29,12 @@ vector_retrieval_lifecycle:
     - build_canonical_text
     - validate_token_budget
     - split_into_chunks
+    - classify_and_authorize_source_metadata
     - generate_chunk_embeddings
     - persist_vector_with_metadata
     - embed_query
-    - search_by_similarity
-    - apply_metadata_filters
+    - search_by_similarity_with_mandatory_scope_filters
+    - revalidate_authorized_projection
     - deduplicate_or_rerank
     - return_context_with_sources
   required_vector_metadata:
@@ -70,8 +71,11 @@ retriever_strategies:
 contract_rules:
   - SST must not call LangChain or provider SDKs directly.
   - SST should depend on a retriever contract, not a vector store implementation.
-  - Retrieval must filter by workspace or account before ranking.
-  - Answers grounded in private documents should include sources.
+  - Retrieval must authorize tenant, user, application, entitlements, classification and source before ranking.
+  - Ranking and provider adapters have no access-granting authority.
+  - Restricted, secret and credential-like content must never reach ranking, provider calls, traces or outbound evidence.
+  - Answers grounded in private documents must represent every factual claim as structured output with citations to retrieved chunks.
+  - Unknown, absent or fabricated citations fail closed.
   - Unit tests must run without external provider calls.
   - Internal ARDS/SDD knowledge and generated user artifacts must remain separated by metadata and ownership.
   - User workspace context starts generic and can be specialized after validated sync.
@@ -93,6 +97,47 @@ validation:
     - Documents include source_tier and origin for filtering.
     - Splitting creates bounded chunks.
     - Vector records preserve embedding model and pipeline version metadata.
-    - Retrieval filters by workspace.
+    - Retrieval filters tenant, user, application, entitlements, classification and source before ranking.
+    - Inactive, non-indexable, restricted, secret and credential-like records never reach retriever or provider ports.
+    - Weak retrieval returns insufficient_context without calling a provider.
+    - Provider claims with unknown citations fail closed.
+    - Metadata-only traces exclude queries, context, tenant and user identifiers.
     - Sync provenance is preserved during ingestion.
     - Chain answers from retrieved context.
+local_implementation:
+  status: implemented-local
+  request_id: CR-SST-0155
+  scope: provider-agnostic-governed-kernel-with-fakes
+  code:
+    - src/app/governed_rag/contracts.py
+    - src/app/governed_rag/ports.py
+    - src/app/governed_rag/policy.py
+    - src/app/governed_rag/retriever.py
+    - src/app/governed_rag/runtime.py
+    - src/app/governed_rag/fakes.py
+    - src/app/user_memory/contracts.py
+    - src/app/user_memory/bend_client.py
+    - src/app/user_memory/source.py
+    - src/app/user_memory/runtime.py
+  tests:
+    - tests/test_governed_rag.py
+    - tests/test_governed_rag_specs.py
+    - tests/test_user_memory_integration.py
+  smoke: scripts/smoke_governed_rag.py
+  state_ref: specs/states/sst-user-governed-rag-v1.yaml
+  owner_doc_ref: docs/architecture/governed-user-memory-rag.md
+  integration_status: composed-with-chat-runtime-by-cr-sst-0194
+  integration_ref: specs/integrations/sst-governed-user-memory-chat.yaml
+control_plane_link:
+  repo: 4uentes-orchestor
+  request_id: CR-SST-0155
+  state_id: sst-user-ards-rag
+  capability_id: retrieval-augmented-generation
+  source_of_truth: false
+non_goals:
+  - Owning canonical user-memory persistence or review decisions.
+  - Database or vector-store adoption.
+  - Real or paid LLM provider integration.
+  - Raw chat ingestion.
+  - Automatic memory acceptance, correction, archive or deletion.
+  - Orchestrator handoffs or stakeholder metrics.

@@ -1,0 +1,37 @@
+version: 1
+kind: capability
+id: sst-user-assistant
+status: active
+title: SST user assistant
+goal: Answer read-only user requests with authorized, minimized context from the same tenant, user, and application.
+owner: sst-chatbot
+audience: sst_user
+identity_authority: sst_backend
+execution_authority: none
+requirements:
+  principal_scope: [tenant_id, user_id, application_id]
+  allowed_source: sst_backend
+  allowed_classifications: [public, internal, private]
+  entitlements_required: true
+  context_minimization_required: true
+  prompt_can_expand_scope: false
+read_only: true
+handoff_created: false
+denials:
+  - missing_or_untrusted_identity
+  - cross_tenant
+  - cross_user
+  - cross_application
+  - missing_entitlement
+  - restricted_or_secret_data
+  - unknown_classification_or_source
+local_implementation:
+  status: implemented-local
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/policy.py
+  tests:
+    - tests/test_audience_access.py
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py

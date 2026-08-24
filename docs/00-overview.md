@@ -13,6 +13,8 @@ The repo must remain provider-agnostic. OpenAI, Anthropic, Deepseek, local model
 - Environment loading through `.env` with committed placeholders in `.env.example`.
 - OpenAI is currently the first real provider experiment.
 - ARDS/SDD documentation under `docs/` and structured contracts under `specs/`.
+- A governed, read-only user-memory RAG kernel under `src/app/governed_rag/`, validated with deterministic fakes and not yet connected to the chat runtime.
+- Un runtime RAG gobernado para explicar métricas globales de stakeholders con valores desde analytics aprobados y citas desde metodología autorizada; todavía sin integración a chat ni proveedor real.
 - Plaud transcript derivations are documented as an asynchronous cross-repo handoff through `4uentes-orchestor`, with production Plaud ingestion staying in `sst-bend`.
 - Repository synchronization is now documented as a tri-repo contract: `sst-chatbot` adopts policy from `4uentes-ards-core` and hands structured execution intents to `4uentes-orchestor`.
 - Model and subagent selection policy lives in `docs/playbooks/model-selection-policy.md`.
@@ -64,6 +66,25 @@ operational context
 - Core policy adoption: `specs/integration/policies.yaml`
 - Orchestrator boundary: `specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml`
 
+## RAG gobernado de memoria de usuario
+
+- Arquitectura owner: `docs/architecture/governed-user-memory-rag.md`.
+- Integración owner: `docs/architecture/governed-user-memory-chat-integration.md`.
+- Capability: `specs/capabilities/retrieval-augmented-generation.yaml`.
+- Contrato de integración: `specs/integrations/sst-governed-user-memory-chat.yaml`.
+- Estado local: `specs/states/sst-user-governed-rag-v1.yaml`.
+- CR-SST-0194 compone recall y propuestas pendientes con Bend; el smoke
+  cross-repo firmado ya pasó con provider determinístico. Continúan pendientes
+  el provider real y el vector store.
+
+## RAG gobernado de métricas para stakeholders
+
+- Arquitectura owner: `docs/architecture/grounded-stakeholder-metrics-rag.md`.
+- Capability: `specs/capabilities/sst-stakeholder-insights.yaml`.
+- Estado local: `specs/states/sst-stakeholder-metrics-rag-v1.yaml`.
+- `MetricSnapshot` conserva la autoridad exclusiva sobre los valores; el retrieval sólo aporta metodología autorizada y citable.
+- El runtime actual usa ports y fakes, sin analytics real, vector store, chat ni proveedor externo.
+
 ## Out Of Scope
 - Business logic.
 - Functional production agents.
@@ -80,6 +101,7 @@ Use the project virtual environment:
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe scripts\ards_check.py
+.\.venv\Scripts\python.exe scripts\smoke_stakeholder_rag.py
 .\.venv\Scripts\python.exe scripts\check.py
 ```
 

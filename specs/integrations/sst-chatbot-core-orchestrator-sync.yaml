@@ -1,7 +1,7 @@
 version: 1
 kind: integration
 id: sst-chatbot-core-orchestrator-sync
-status: draft
+status: active
 title: SST chatbot synchronization with ARDS core and orchestrator
 goal: Define how sst-chatbot stays aligned with 4uentes-ards-core contracts and 4uentes-orchestor execution handoffs without owning production orchestration or canonical ARDS policy.
 participants:
@@ -26,6 +26,9 @@ participants:
       - private prompt and model boundaries
       - retriever POCs and generated workspace context contracts
       - structured intent preparation before orchestrator handoff
+      - audience access policy and safe disclosure implementation
+      - governed user-memory retrieval policy, ranking and grounding contracts
+      - governed stakeholder methodology retrieval, exact metric claims and documentary citations
 sync_streams:
   core_contract_adoption:
     direction: 4uentes-ards-core -> sst-chatbot
@@ -46,6 +49,10 @@ sync_streams:
       - src/app/orchestrator/types.py
       - src/app/orchestrator/validation.py
       - src/app/orchestrator/fake_client.py
+      - src/app/orchestrator/port.py
+      - src/app/orchestrator/service.py
+      - src/app/agents/lifecycle.py
+      - src/app/operation_policy.py
     required_fields:
       - operation_intent_id
       - capability_id
@@ -69,6 +76,71 @@ sync_streams:
       - sync_source_repo
       - sync_revision
       - indexable
+  child_capability_evidence:
+    status: active
+    direction: sst-chatbot -> 4uentes-orchestor
+    payload_class: technical_maturity_only
+    capability_links_ref: specs/integration/capability-links.yaml
+    delivery_mode: owner-manifest-pull
+    validation_gate: scripts/check.py
+    capabilities:
+      - capability_id: audience-aware-context-governance
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:a8e51e94623b185ecfed4b48fe04c35207bd8d401c29b245427a63cf7e7e7899
+        evidence:
+          - specs/capabilities/audience-aware-context-governance.yaml
+          - tests/test_audience_access.py
+        execution_authority: none
+        contains_business_data: false
+      - capability_id: sst-user-assistant
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:4828e94d42dffbafd54d311ee1d931785d09d9a48eb3ef859a85cfb8a0a3781f
+        evidence:
+          - specs/capabilities/sst-user-assistant.yaml
+          - tests/test_audience_access.py
+        execution_authority: none
+        contains_business_data: false
+      - capability_id: sst-stakeholder-insights
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:079b7a0893c8178b7f367069ad84fbbe43c6b9a3185abe8aa218a3b4d748db98
+        evidence:
+          - specs/capabilities/sst-stakeholder-insights.yaml
+          - tests/test_audience_access.py
+          - specs/states/sst-stakeholder-metrics-rag-v1.yaml
+          - tests/test_stakeholder_rag.py
+          - tests/test_stakeholder_rag_specs.py
+          - scripts/smoke_stakeholder_rag.py
+        execution_authority: none
+        contains_business_data: false
+      - capability_id: retrieval-augmented-generation
+        owner: sst-chatbot
+        capability_status: active
+        local_status: implemented-local
+        movement_digest: sha256:9a06c39c6347646c35e5596e62ea20fd5c4b38677bee276e611aa3f8defa19f0
+        evidence:
+          - specs/capabilities/retrieval-augmented-generation.yaml
+          - specs/states/sst-user-governed-rag-v1.yaml
+          - tests/test_governed_rag.py
+          - tests/test_governed_rag_specs.py
+          - tests/test_user_memory_integration.py
+          - specs/integrations/sst-governed-user-memory-chat.yaml
+          - docs/architecture/governed-user-memory-chat-integration.md
+          - scripts/smoke_governed_rag.py
+        execution_authority: none
+        contains_business_data: false
+    forbidden_payloads:
+      - user_queries
+      - assistant_responses
+      - metric_values
+      - tenant_or_person_identifiers
+      - retrieved_private_chunks
+      - grounded_answer_content
 rules:
   - 4uentes-ards-core is the source of canonical ARDS/SDD policies; sst-chatbot only adopts scoped local copies.
   - 4uentes-orchestor owns execution lifecycle after a handoff is accepted.
@@ -76,12 +148,31 @@ rules:
   - User workspace documentation can be indexed only after sync metadata and manifest eligibility are validated.
   - The local fake orchestrator adapter remains test infrastructure until a real transport is defined.
   - Contract drift must be recorded by updating specs/ards/contract-binding.yaml before changing runtime behavior.
+  - Audience reads are functional read-only work and never enter the orchestrator lifecycle.
+  - Child capability evidence contains technical maturity only and never business data.
+  - Every linked capability movement must keep the owner spec, capability link, and outbound evidence stream aligned.
+  - Governed RAG child evidence reports technical maturity only; private queries, chunks, answers and citations stay local to the runtime boundary.
+  - Stakeholder RAG child evidence reports technical maturity only; metric values, questions, methodology content and grounded answers stay local to the runtime boundary.
+known_contract_drift:
+  - id: orchestrator-inbound-server-operation-list
+    status: blocked-local
+    description: >
+      The current control-plane inbound draft lists server.refresh_cache and
+      server.restart_service, while the producer contract keeps both operations
+      future-blocked. The local producer allowlist remains authoritative until
+      a future control-plane reconciliation removes the mismatch.
+    local_enforcement:
+      - src/app/operation_policy.py
+      - tests/test_operation_policy.py
 validation:
   expected_checks:
     - ARDS core binding contains the resolved core contract version and core ref.
     - Orchestrator handoff payloads include idempotency and audit metadata.
+    - Review-required operations preserve typed review evidence through the port and receipt.
+    - Receipts are bound to the submitted payload fingerprint and correlation context.
     - Retriever-ingested user workspace documents carry source tier and sync revision.
     - Server operation intents remain blocked unless approved by orchestrator policy.
+    - Child capability evidence has no execution authority and contains no business data.
 related_docs:
   - docs/architecture/agent-core-and-orchestrator-boundary.md
   - docs/architecture/user-workspace-ards.md
@@ -93,3 +184,7 @@ related_specs:
   - specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml
   - specs/capabilities/retrieval-augmented-generation.yaml
   - specs/capabilities/retriever-strategies.yaml
+  - specs/integration/control-plane-link.yaml
+  - specs/architecture/audience-safe-disclosure.yaml
+  - specs/states/sst-chatbot-audience-access-v1.yaml
+  - specs/states/sst-stakeholder-metrics-rag-v1.yaml

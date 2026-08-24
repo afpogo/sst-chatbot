@@ -1,13 +1,22 @@
 version: 1
 kind: poc
 id: agent-lifecycle-orchestrator-boundary-poc
-status: draft
+status: active
 title: Agent lifecycle and orchestrator boundary POC
 goal: Prove a safe path from SST event to agent lifecycle state, validated operation intent, handoff payload, and fake 4uentes-orchestor response.
-notebook: labs/notebooks/agent_lifecycle_orchestrator_boundary_poc.ipynb
+notebook: null
 implementation:
-  reusable_module: null
-  tests: null
+  reusable_modules:
+    - src/app/operation_policy.py
+    - src/app/agents/lifecycle.py
+    - src/app/orchestrator/port.py
+    - src/app/orchestrator/service.py
+    - src/app/orchestrator/fake_client.py
+  tests:
+    - tests/test_operation_policy.py
+    - tests/test_agent_lifecycle.py
+    - tests/test_orchestrator_service.py
+    - tests/test_fake_orchestrator_handoff.py
 providers:
   mock:
     default: true
@@ -33,5 +42,8 @@ promotion_criteria:
   - Add tests for allowed and rejected operation intents.
   - Document the first consuming SST API boundary and 4uentes-orchestor handoff boundary.
   - Replace the fake orchestrator client with an adapter boundary that can map to 4uentes-orchestor.
+promotion_status:
+  reusable_local_contracts: promoted
+  production_transport: pending-control-plane-runtime
 discard_criteria:
   - If agent lifecycle is handled entirely inside the consuming SST app with no reusable agent contract.

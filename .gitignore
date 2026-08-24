@@ -14,4 +14,6 @@ node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
+.coverage
+htmlcov/
 debug.log

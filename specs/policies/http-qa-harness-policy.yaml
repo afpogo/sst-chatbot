@@ -1,0 +1,27 @@
+schema_version: "1.0"
+kind: "policy_adoption_manifest"
+policy_id: "http-qa-harness-policy"
+policy_class: "core-profile-scoped"
+policy_source:
+  repo: "4uentes-ards-core"
+  path: "specs/integration/policies.yaml"
+  source_version: "policy-runtime-2026-07-11"
+origin_repo: "4uentes-ards-core"
+canonical_owner: "4uentes-ards-core"
+applicability: "Backend/API repos that own or consume an HTTP contract"
+adoption_mode: "required-by-profile"
+required_for_profiles: ["backend-api-with-http-ownership"]
+optional_for_profiles: ["backend-api-without-http-ownership"]
+template_binding: "templates/specs/policies/policy-adoption.template.yaml"
+local_aliases: []
+adopting_repo: "sst-chatbot"
+owner: "sst-chatbot"
+adoption_status: "adopted"
+adopted_at: "2026-08-09"
+approval_ref: "4uentes-orchestor:CR-SST-0168"
+local_implementation_path: "httpPruebas/chat-turns.http"
+validation_ref: "tests/test_chat_http_runtime.py"
+evidence_refs:
+  - "docs/ai/policy.md"
+  - "specs/integrations/sst-chatbot-core-orchestrator-sync.yaml"
+  - "docs/architecture/http-chat-runtime.md"

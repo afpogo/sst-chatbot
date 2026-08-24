@@ -1,0 +1,17 @@
+schema_version: "1.0"
+version: 1
+kind: "state_specs_index"
+status: "active"
+states:
+  - id: "agent-runtime-core-v1"
+    path: "specs/states/agent-runtime-core-v1.yaml"
+    status: "in-progress"
+  - id: "sst-chatbot-audience-access-v1"
+    path: "specs/states/sst-chatbot-audience-access-v1.yaml"
+    status: "in-progress"
+  - id: "sst-user-governed-rag-v1"
+    path: "specs/states/sst-user-governed-rag-v1.yaml"
+    status: "in-progress"
+  - id: "sst-stakeholder-metrics-rag-v1"
+    path: "specs/states/sst-stakeholder-metrics-rag-v1.yaml"
+    status: "in-progress"

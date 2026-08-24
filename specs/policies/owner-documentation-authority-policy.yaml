@@ -1,0 +1,19 @@
+schema_version: "1.0"
+kind: "policy_adoption_manifest"
+policy_id: "owner-documentation-authority-policy"
+policy_class: "core-general"
+policy_source: {repo: "4uentes-ards-core", path: "specs/integration/policies.yaml", source_version: "policy-runtime-2026-07-11"}
+origin_repo: "4uentes-ards-core"
+canonical_owner: "4uentes-ards-core"
+applicability: "Runtime and capabilities owned by sst-chatbot"
+adoption_mode: "inherited"
+required_for_profiles: ["backend-api"]
+optional_for_profiles: []
+template_binding: null
+local_aliases: []
+adopting_repo: "sst-chatbot"
+adoption_status: "adopted"
+local_implementation_path: "specs/capabilities/agent-lifecycle-and-orchestrator-boundary.yaml"
+validation_ref: "scripts/check.py"
+evidence_refs: ["docs/architecture/agent-runtime-product-intent.md"]
+notes: ["Control-plane evidence does not replace owner specs and tests."]

@@ -1,6 +1,6 @@
 version: 1
 kind: ards_sdd_index
-repository: sst_chatbot
+repository: sst-chatbot
 description: Agent integration repository for SST and future applications.
 entries:
   architecture:
@@ -13,6 +13,9 @@ entries:
     - id: agent-runtime-product-intent
       path: specs/architecture/agent-runtime-product-intent.yaml
       status: draft
+    - id: audience-safe-disclosure
+      path: specs/architecture/audience-safe-disclosure.yaml
+      status: accepted
   capabilities:
     - id: provider-abstraction
       path: specs/capabilities/provider-abstraction.yaml
@@ -22,7 +25,7 @@ entries:
       status: draft
     - id: retrieval-augmented-generation
       path: specs/capabilities/retrieval-augmented-generation.yaml
-      status: draft
+      status: active
     - id: retriever-strategies
       path: specs/capabilities/retriever-strategies.yaml
       status: candidate
@@ -47,13 +50,34 @@ entries:
     - id: prompt-catalog-and-versioning
       path: specs/capabilities/prompt-catalog-and-versioning.yaml
       status: draft
+    - id: audience-aware-context-governance
+      path: specs/capabilities/audience-aware-context-governance.yaml
+      status: active
+    - id: sst-user-assistant
+      path: specs/capabilities/sst-user-assistant.yaml
+      status: active
+    - id: sst-stakeholder-insights
+      path: specs/capabilities/sst-stakeholder-insights.yaml
+      status: active
   integrations:
+    - id: sst-realtime-chat-runtime
+      path: specs/integrations/sst-realtime-chat-runtime.yaml
+      status: draft
+    - id: sst-governed-user-memory-chat
+      path: specs/integrations/sst-governed-user-memory-chat.yaml
+      status: implemented-local
+    - id: control-plane-link
+      path: specs/integration/control-plane-link.yaml
+      status: active
+    - id: sst-chatbot-audience-capability-links
+      path: specs/integration/capability-links.yaml
+      status: active
     - id: sst-agent-feed
       path: specs/integrations/sst-agent-feed.yaml
       status: draft
     - id: sst-chatbot-core-orchestrator-sync
       path: specs/integrations/sst-chatbot-core-orchestrator-sync.yaml
-      status: draft
+      status: active
     - id: plaud-sst-orchestrator-derivations
       path: specs/integrations/plaud-sst-orchestrator-derivations.yaml
       status: draft
@@ -75,13 +99,26 @@ entries:
       status: active
     - id: agent-lifecycle-orchestrator-boundary-poc
       path: specs/pocs/agent-lifecycle-orchestrator-boundary-poc.yaml
-      status: draft
+      status: active
     - id: user-activity-ards-memory-poc
       path: specs/pocs/user-activity-ards-memory-poc.yaml
       status: draft
     - id: application-context-connector-poc
       path: specs/pocs/application-context-connector-poc.yaml
       status: draft
+  states:
+    - id: agent-runtime-core-v1
+      path: specs/states/agent-runtime-core-v1.yaml
+      status: in-progress
+    - id: sst-chatbot-audience-access-v1
+      path: specs/states/sst-chatbot-audience-access-v1.yaml
+      status: in-progress
+    - id: sst-stakeholder-metrics-rag-v1
+      path: specs/states/sst-stakeholder-metrics-rag-v1.yaml
+      status: in-progress
+    - id: sst-user-governed-rag-v1
+      path: specs/states/sst-user-governed-rag-v1.yaml
+      status: in-progress
 policies:
   index: "specs/policies/00-index.yaml"
   registry: "specs/integration/policies.yaml"

@@ -1,0 +1,78 @@
+version: 1
+kind: capability
+id: sst-stakeholder-insights
+status: active
+title: SST stakeholder insights
+goal: Explain approved global SST metrics without exposing tenants, people, conversations, contracts, or raw records.
+owner: sst-chatbot
+audience: sst_stakeholder
+identity_authority: sst_backend
+execution_authority: none
+contracts:
+  - MetricQuery
+  - MetricSnapshot
+  - StakeholderMetricsPort
+  - MethodologyRecord
+  - AuthorizedMethodology
+  - StakeholderGroundedAnswer
+  - StakeholderRagResult
+approved_sources:
+  metric_values: approved_analytics
+  documentary_context: approved_methodology
+allowed_classifications: [public, derived_safe]
+metric_catalog:
+  - active_accounts
+  - active_users
+  - new_accounts
+  - retention_rate
+  - operation_volume
+  - module_adoption
+granularity: monthly
+minimum_cohort_size: 10
+dimensions:
+  module_adoption: [module_id]
+free_filters_allowed: false
+tenant_drill_down_allowed: false
+raw_records_allowed: false
+read_only: true
+handoff_created: false
+methodology_retrieval:
+  metric_match_required: true
+  active_and_indexable_required: true
+  entitlement_required: true
+  authorization_before_ranking: true
+  can_calculate_metric_values: false
+output_contract:
+  exact_snapshot_claims_required: true
+  retrieved_citations_required: true
+  numeric_narrative_allowed: false
+  trace_policy: metadata_only
+control_plane_link:
+  repo: 4uentes-orchestor
+  request_id: CR-SST-0156
+  state_id: sst-stakeholder-metrics-rag
+  capability_id: sst-stakeholder-insights
+  source_of_truth: false
+adapter:
+  current: fake-local
+  real_api_or_database: false
+local_implementation:
+  status: implemented-local
+  code:
+    - src/app/audience_access/contracts.py
+    - src/app/audience_access/metrics.py
+    - src/app/audience_access/methodology.py
+    - src/app/audience_access/runtime.py
+    - src/app/audience_access/stakeholder_rag.py
+  tests:
+    - tests/test_audience_access.py
+    - tests/test_stakeholder_rag.py
+    - tests/test_stakeholder_rag_specs.py
+  smoke: scripts/smoke_stakeholder_rag.py
+  state_ref: specs/states/sst-stakeholder-metrics-rag-v1.yaml
+  owner_doc_ref: docs/architecture/grounded-stakeholder-metrics-rag.md
+validation:
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_audience_access.py tests/test_stakeholder_rag.py tests/test_stakeholder_rag_specs.py
+    - .\.venv\Scripts\python.exe scripts/smoke_stakeholder_rag.py
+    - .\.venv\Scripts\python.exe scripts/check.py

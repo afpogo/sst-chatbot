@@ -1,0 +1,84 @@
+schema_version: "1.0"
+version: 1
+kind: feature_state
+id: sst-user-governed-rag-v1
+status: in-progress
+title: Governed read-only RAG for SST user memory V1
+updated_at: "2026-08-23"
+owner: sst-chatbot
+control_plane_link:
+  repo: 4uentes-orchestor
+  request_id: CR-SST-0155
+  state_id: sst-user-ards-rag
+  capability_id: retrieval-augmented-generation
+  status_hint: implemented-local
+implemented:
+  - Immutable retrieval scope and governed memory record contracts.
+  - Deterministic authorization before ranking across tenant, user, application, entitlements, classification and source.
+  - Absolute exclusion for inactive, non-indexable, restricted, secret and credential-like content.
+  - Replaceable source, retriever and grounded-answer ports.
+  - Deterministic lexical retriever over already-authorized chunks.
+  - Bounded provider context and structured claim/citation validation.
+  - Metadata-only decision trace with sanitized error codes.
+  - Positive and negative fake-provider smoke.
+  - Bend M2M adapter with separate recall and proposal grants.
+  - Turn-bound source that cross-checks Bend-derived scope against the validated turn.
+  - Composed chat runtime with recall audit and review-only proposal handoff.
+  - Published Auth, Bend and chatbot owner contracts for CR-SST-0194.
+  - Integrated signed-token smoke with authoritative Bend scope, recall audit and review-only proposal.
+pending:
+  - Evaluate a real provider and vector store only after source ownership and secret custody are approved.
+non_goals:
+  - Read raw chats or operational events.
+  - Persist canonical memory or vectors.
+  - Call OpenAI or any external provider.
+  - Automatically accept, correct, archive or delete memory.
+  - Emit orchestrator handoffs.
+evidence:
+  code:
+    - src/app/governed_rag/contracts.py
+    - src/app/governed_rag/ports.py
+    - src/app/governed_rag/policy.py
+    - src/app/governed_rag/retriever.py
+    - src/app/governed_rag/runtime.py
+    - src/app/governed_rag/fakes.py
+    - src/app/user_memory/contracts.py
+    - src/app/user_memory/bend_client.py
+    - src/app/user_memory/source.py
+    - src/app/user_memory/runtime.py
+  tests:
+    - tests/test_governed_rag.py
+    - tests/test_governed_rag_specs.py
+    - tests/test_user_memory_integration.py
+  test_cases:
+    - test_policy_version_fails_before_source_retriever_and_provider
+    - test_sensitive_question_fails_before_any_context_read
+    - test_unauthorized_records_never_reach_retriever_or_provider
+    - test_no_authorized_context_fails_closed_before_ranking
+    - test_weak_relevance_returns_insufficient_context_without_provider
+    - test_context_budget_never_sends_partial_or_oversized_chunk
+    - test_completed_answer_has_only_retrieved_citations_and_provenance
+    - test_unknown_provider_citation_is_rejected
+    - test_prompt_injection_is_untrusted_corpus_data_and_cannot_expand_scope
+    - test_source_retriever_and_provider_errors_are_sanitized
+    - test_invalid_source_record_fails_closed_with_sanitized_policy_error
+    - test_invalid_provider_payload_fails_closed_without_exposing_output
+    - test_trace_contains_only_counts_codes_and_correlation
+    - test_http_client_uses_separate_exact_grants_and_never_sends_principal_scope
+    - test_composed_runtime_audits_citations_and_hands_off_pending_proposal
+    - test_authoritative_scope_mismatch_fails_closed_before_provider
+  smoke:
+    - scripts/smoke_governed_rag.py
+    - scripts/serve_user_memory_smoke.py
+  owner_docs:
+    - docs/architecture/governed-user-memory-rag.md
+    - specs/capabilities/retrieval-augmented-generation.yaml
+    - specs/capabilities/user-activity-ards-memory.yaml
+    - specs/capabilities/application-context-connector.yaml
+    - docs/architecture/governed-user-memory-chat-integration.md
+    - specs/integrations/sst-governed-user-memory-chat.yaml
+  commands:
+    - .\.venv\Scripts\python.exe -m pytest tests/test_governed_rag.py tests/test_governed_rag_specs.py
+    - .\.venv\Scripts\python.exe scripts/smoke_governed_rag.py
+    - .\.venv\Scripts\python.exe scripts/serve_user_memory_smoke.py
+    - .\.venv\Scripts\python.exe scripts/check.py

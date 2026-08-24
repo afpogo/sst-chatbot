@@ -1,34 +1,51 @@
 # Policies
 
-## Proposito
+## Propósito
 
-Esta carpeta contiene la lectura humana de las policies operativas adoptadas por
-el repo.
+Este repositorio adopta el common policy runtime canónico de
+`4uentes-ards-core`. La adopción local gobierna cómo trabajan los agentes y
+cómo se conserva la autoridad documental, sin reemplazar contratos funcionales
+ni decisiones del control-plane.
 
-El registry machine-readable vive en:
-
-- specs/integration/policies.yaml
-
-Estas policies se heredan desde 4uentes-ards-core y se aplican localmente sin
-reemplazar contratos funcionales, capabilities, ownership ni arquitectura de
-producto.
+El registro machine-readable vive en `specs/integration/policies.yaml` y los
+manifests individuales en `specs/policies/`.
 
 ## Policies adoptadas
 
-- gent-model-selection-policy
-- gent-resource-degradation-policy
-- gent-task-atomization-policy
-- gent-delegation-policy
-- gent-context-management-policy
-- gent-architecture-boundary-policy
+- `visual-documentation-as-code-policy`
+- `agent-model-selection-policy`
+- `agent-resource-degradation-policy`
+- `agent-task-atomization-policy`
+- `agent-delegation-policy`
+- `agent-context-management-policy`
+- `agent-architecture-boundary-policy`
+- `human-doc-language`
+- `owner-documentation-authority-policy`
+- `control-plane-link-policy`
+- `http-qa-harness-policy`
+
+`http-qa-harness-policy` quedó adoptada por `CR-SST-0168`: el endpoint interno
+de turnos tiene un caso reproducible en `httpPruebas/chat-turns.http` y pruebas
+automatizadas en `tests/test_chat_http_runtime.py`.
 
 ## Reglas locales
 
-- Resolver aliases de modelos segun la configuracion local del repo.
-- Registrar gaps o excepciones locales antes de contradecir una policy core.
-- Mantener alineados AGENTS.md, specs/00-index.yaml y specs/integration/policies.yaml.
+- Los mapas normativos nuevos o materialmente modificados deben usar Mermaid,
+  metadata `visual_map`, source refs owner y fallback textual adyacente.
+- Los mapas son vistas derivadas; `specs/**` y contratos owner conservan
+  autoridad si existe una contradiccion.
+- No incluir secretos, tokens, cookies, PII, prompts privados ni valores
+  runtime en mapas.
+- Los nombres de modelos son aliases resueltos por el entorno.
+- La documentación humana nueva se escribe en español; IDs, schemas, comandos
+  y contratos técnicos conservan su forma estable.
+- Este repo es autoridad sobre su runtime, capabilities outbound, specs y tests.
+- `4uentes-orchestor` conserva request lifecycle, evidencia central y estado
+  reconciliado, pero no reemplaza la documentación owner de este repo.
+- `orchestrator_link` se mantiene como alias local de `control_plane_link`.
+- El chatbot produce propuestas e intents; no ejecuta operaciones productivas.
 
-## Pendientes
+## Estado
 
-No hay excepciones locales abiertas para esta adopcion minima. Si aparece una,
-registrarla en el lifecycle del orquestador y en artefactos ARDS/SDD locales.
+La adopción local está materializada para la aplicabilidad actual y pendiente
+de una nueva reconciliación del control-plane.

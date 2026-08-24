@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+from datetime import timezone
 from typing import Any
 from typing import Literal
 
@@ -13,6 +15,19 @@ HandoffStatus = Literal[
     "duplicate",
     "conflict",
 ]
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(microsecond=0)
+
+
+class ReviewEvidence(BaseModel):
+    model_config = {"frozen": True}
+
+    reviewer: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    evidence_ref: str = Field(min_length=1)
+    reviewed_at: datetime = Field(default_factory=_utc_now)
 
 
 class HandoffPayload(BaseModel):
@@ -51,5 +66,6 @@ class HandoffReceipt(BaseModel):
     idempotency_key: str
     correlation_id: str
     audit_metadata: dict[str, Any] = Field(default_factory=dict)
+    review_evidence: ReviewEvidence | None = None
     decision: HandoffDecision
     payload_fingerprint: str

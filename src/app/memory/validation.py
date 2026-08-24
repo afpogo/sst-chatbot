@@ -4,8 +4,8 @@ from app.memory.types import OperationalRecord
 from app.memory.types import ValidationIssue
 from app.memory.types import ValidationResult
 from app.memory.types import stable_body_hash
-
-BLOCKED_OPERATIONS = {"server.restart_service", "server.refresh_cache"}
+from app.operation_policy import HANDOFF_CAPABILITY_ID
+from app.operation_policy import evaluate_operation
 
 
 def validate_record(record: OperationalRecord) -> ValidationResult:
@@ -69,12 +69,22 @@ def validate_record(record: OperationalRecord) -> ValidationResult:
                 )
             )
 
-    requested_operation = record.payload.get("requested_operation")
-    if requested_operation in BLOCKED_OPERATIONS:
+    if (
+        record.record_type == "intent"
+        and record.capability_id == HANDOFF_CAPABILITY_ID
+    ):
+        operation_decision = evaluate_operation(
+            record.payload.get("requested_operation"),
+            human_reviewed=True,
+        )
+    else:
+        operation_decision = None
+
+    if operation_decision is not None and not operation_decision.accepted:
         issues.append(
             ValidationIssue(
-                code="blocked_operation",
-                message=f"{requested_operation} is blocked until RBAC, audit, rollback, scheduling policy, and approval gates exist",
+                code=operation_decision.code,
+                message=operation_decision.message,
                 record_id=record.id,
             )
         )

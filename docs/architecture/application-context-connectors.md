@@ -77,3 +77,17 @@ For Robots in SST, the current discovery state is `runtime-partial`; this means 
 - This repository should not mutate application databases.
 - This repository should not grant robot permissions by itself.
 - This repository should not depend on one application domain to understand all others.
+
+## Principal verificado y data products seguros
+
+Todo connector que alimente una experiencia de audiencia debe propagar un
+`PrincipalContext` afirmado por `sst_backend`. El descriptor declara además el
+mapeo de clasificación, los data products seguros y la metadata de divulgación.
+El connector no autentica, no infiere entitlements y no transforma texto del
+prompt en permisos.
+
+Para `sst_user`, cada envelope coincide exactamente en tenant, usuario y
+aplicación. Para `sst_stakeholder`, el único data product inicial es un snapshot
+global de `approved_analytics`, con definición, período, cohorte, supresión y
+provenance. `restricted` y `secret` nunca son elegibles para retrieval, provider,
+trace ni audit.

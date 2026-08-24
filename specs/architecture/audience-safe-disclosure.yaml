@@ -1,0 +1,79 @@
+version: 1
+kind: architecture
+id: audience-safe-disclosure
+status: accepted
+title: Audience-aware access and safe disclosure
+decision_date: 2026-08-08
+decision:
+  summary: >
+    Serve sst_user and sst_stakeholder through one provider-agnostic runtime,
+    while SST keeps identity and business authorization and this repository
+    applies deterministic pre-provider and post-provider policy.
+  identity_authority: sst_backend
+  execution_authority: none
+audiences:
+  sst_user:
+    scope_required: [tenant_id, user_id, application_id]
+    allowed_classifications: [public, internal, private]
+    allowed_sources: [sst_backend]
+  sst_stakeholder:
+    scope_required: [application_id]
+    allowed_classifications: [public, derived_safe]
+    allowed_sources: [approved_analytics]
+    data_scope: global_aggregate_only
+data_classifications:
+  - public
+  - internal
+  - private
+  - derived_safe
+  - restricted
+  - secret
+absolute_denials:
+  - restricted
+  - secret
+  - unknown_classification
+  - unknown_source
+  - incomplete_scope
+  - identity_not_asserted_by_sst_backend
+rules:
+  - Prompts do not grant permissions or expand scopes.
+  - Context is minimized before provider input is assembled.
+  - Provider output uses structured claims and deterministic disclosure checks.
+  - Read-only audience requests do not create orchestrator handoffs.
+  - The orchestrator receives capability maturity evidence and no business data.
+stakeholder_metrics:
+  catalog:
+    - active_accounts
+    - active_users
+    - new_accounts
+    - retention_rate
+    - operation_volume
+    - module_adoption
+  granularity: monthly
+  minimum_cohort_size: 10
+  allowed_dimensions:
+    module_adoption: [module_id]
+  forbidden_features:
+    - sql
+    - free_filters
+    - tenant_drill_down
+    - individual_records
+consequences:
+  positive:
+    - The provider sees only authorized, minimized context.
+    - Stakeholder claims remain bound to approved analytical snapshots.
+    - Provider and analytical adapters remain replaceable.
+  tradeoffs:
+    - V1 rejects useful queries that are outside the closed metric catalog.
+    - A missing provenance field or unavailable analytical source fails closed.
+implementation_refs:
+  - src/app/audience_access/contracts.py
+  - src/app/audience_access/policy.py
+  - src/app/audience_access/metrics.py
+  - src/app/audience_access/runtime.py
+validation_refs:
+  - tests/test_audience_access.py
+  - scripts/ards_check.py
+human_documentation:
+  - docs/adr/0004-audience-safe-disclosure.md
+  - docs/architecture/audience-safe-disclosure.md

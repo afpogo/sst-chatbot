@@ -24,6 +24,8 @@ connector_descriptor:
   required_fields:
     - application_id
     - application_name
+    - principal_contract
+    - identity_authority
     - domains
     - event_types
     - entity_types
@@ -32,6 +34,44 @@ connector_descriptor:
     - retrieval_scope_rules
     - supported_intents
     - blocked_intents
+    - data_classification_mapping
+    - safe_data_products
+    - disclosure_metadata
+principal_context:
+  contract: PrincipalContext
+  asserted_by: sst_backend
+  required_metadata:
+    - audience
+    - scope
+    - entitlements
+    - authentication_ref
+    - policy_version
+governed_retrieval_scope:
+  status: implemented-local-with-fakes
+  request_id: CR-SST-0155
+  derived_from: PrincipalContext
+  required_fields:
+    - tenant_id
+    - user_id
+    - application_id
+    - entitlements
+    - allowed_classifications
+    - allowed_sources
+    - policy_version
+  authority_rules:
+    - User text cannot provide or override retrieval scope.
+    - The chatbot validates the complete scope before reading candidates.
+    - A future connector adapter may project a validated SST principal but cannot grant broader access than SST asserted.
+safe_context:
+  envelope: SafeContextEnvelope
+  classifications: [public, internal, private, derived_safe, restricted, secret]
+  rules:
+    - Context is classified and scoped before retrieval or provider assembly.
+    - Restricted and secret records never reach providers, traces, or audit payloads.
+    - Safe analytical data products include provenance and suppression metadata.
+disclosure_metadata:
+  fields: [audience, policy_version, decision_code, contains_business_data]
+  contains_business_data: false
 sst_initial_domains:
   - articles
   - dictionary
@@ -55,3 +95,6 @@ validation:
     - Runtime and file connector modes normalize into the same event shape.
     - Robot scope filters are applied before retrieval.
     - Blocked intents cannot be emitted from connector-derived context.
+    - Principal identity is asserted by sst_backend and scope is complete for its audience.
+    - Classification, source, and disclosure metadata are validated before provider input.
+    - Retrieval scope cannot be expanded through query text or retrieved prompt-injection content.

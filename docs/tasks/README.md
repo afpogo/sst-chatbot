@@ -21,10 +21,11 @@ Do not use it for transient logs, raw debug output, or secrets.
 - Use `CR-SST-0006` Robots context as discovery evidence, not runtime authorization.
 - Add a generated workspace manifest model and tests.
 - Decide whether `runtime_validation_playground.ipynb` should be archived or removed.
-- Expand `scripts/check.py` if future validation requires linting, formatting, or provider-specific smoke tests.
 - Keep lifecycle and orchestrator-boundary POCs isolated under `pocs/` until tests and handoff boundaries are stable.
 - Keep Plaud transcript derivations asynchronous through `4uentes-orchestor`; do not make Plaud sync depend on chatbot completion.
 
 ## Latest Summary
+- `docs/tasks/2026-08-13-governed-user-memory-rag.md`
+- `docs/tasks/2026-08-10-llm-provider-smoke.md`
 - `docs/tasks/2026-05-24-plaud-sst-orchestrator-handoff.md`
 - `docs/tasks/2026-04-27-session-summary.md`

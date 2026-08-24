@@ -1,0 +1,27 @@
+schema_version: "1.0"
+kind: "policy_adoption_manifest"
+policy_id: "visual-documentation-as-code-policy"
+policy_class: "core-profile-scoped"
+policy_source:
+  repo: "4uentes-ards-core"
+  path: "specs/integration/policies.yaml"
+  source_version: "b00c4eb4d5cd73d3964d9378ae1ae2900b53b2a0"
+origin_repo: "4uentes-ards-core"
+canonical_owner: "4uentes-ards-core"
+applicability: "Normative ARDS/SDD dependency, lifecycle, sequence and logical data maps owned by sst-chatbot."
+adoption_mode: "request-driven"
+required_for_profiles: []
+optional_for_profiles: ["backend-api"]
+template_binding: null
+local_aliases: []
+adopting_repo: "sst-chatbot"
+adoption_status: "adopted"
+local_implementation_path: "docs/policies/README.md"
+validation_ref: "scripts/check.py"
+evidence_refs:
+  - "specs/architecture/agent-runtime-product-intent.yaml"
+  - "docs/architecture/agent-runtime-product-intent.md"
+notes:
+  - "Adoption is prospective; existing diagrams are not migrated in bulk."
+  - "A visual map is derived and never overrides its referenced owner contract."
+  - "CR-SST-0190 authorizes documentation governance only and no chatbot runtime or prompt change."

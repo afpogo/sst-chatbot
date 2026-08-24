@@ -102,7 +102,11 @@ Inherited policies:
 - `agent-delegation-policy`
 - `agent-context-management-policy`
 - `agent-architecture-boundary-policy`
+- `visual-documentation-as-code-policy`
+- `human-doc-language`
+- `owner-documentation-authority-policy`
+- `control-plane-link-policy`
+- `http-qa-harness-policy` (`exception-open`/`not-applicable` hasta que exista una superficie HTTP propia)
 
 These policies are inherited from `4uentes-ards-core` and adopted locally through scoped manifests. They complement local specs, docs, capabilities, handoffs, and working agreements. They do not replace functional contracts, ownership, or product architecture.
-
 
