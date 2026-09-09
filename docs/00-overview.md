@@ -6,6 +6,7 @@ This repository is the experimentation and integration base for AI agents that c
 The repo must remain provider-agnostic. OpenAI, Anthropic, Deepseek, local models, or any future provider should be replaceable behind stable internal contracts.
 
 ## Current State
+- CR-SST-0224: [contratos iniciales del pipeline de artículos](architecture/article-processing-pipeline.md), sin conexión a proveedores ni persistencia todavía.
 - Primary future application package under `src/app/`.
 - Existing reusable SST POC modules under `src/sst_chatbot/`.
 - Laboratory notebooks under `labs/notebooks/`.

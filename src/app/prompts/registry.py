@@ -12,6 +12,7 @@ from app.prompts.validators import validate_prompt_definition
 PROMPTS_DIR = Path(__file__).resolve().parent
 
 CATALOG_PATHS = {
+    "task.article_analysis": PROMPTS_DIR / "catalog" / "tasks" / "article_analysis.yaml",
     "system.sst_base_assistant": PROMPTS_DIR
     / "catalog"
     / "system"

@@ -4,6 +4,9 @@ repository: sst-chatbot
 description: Agent integration repository for SST and future applications.
 entries:
   architecture:
+    - id: article-processing-pipeline
+      path: specs/architecture/article-processing-pipeline.yaml
+      status: draft
     - id: python-agentic-structure
       path: specs/architecture/python-agentic-structure.yaml
       status: accepted
