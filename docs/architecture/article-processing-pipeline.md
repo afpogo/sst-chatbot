@@ -3,8 +3,8 @@
 ## Rol, estado y fuentes
 
 Rol primario: guía técnica explicativa. Owner: sst-chatbot.
-Estado: **recorrido secuencial y checkpoints locales con fakes implementados**,
-CR-SST-0224, revisión 2026-09-08-unit-4. Finalización e integración siguen pendientes.
+Estado: **recorrido, checkpoints y candidata a síntesis final con fakes implementados**,
+CR-SST-0224, revisión 2026-09-09-unit-5. Aceptación canónica e integración pendientes.
 No es un runbook ni autoriza despliegues.
 
 Fuente local: [spec del pipeline](../../specs/architecture/article-processing-pipeline.yaml).
@@ -116,6 +116,29 @@ exactamente una vez ni durabilidad al reiniciar procesos. El objeto devuelto es
 un checkpoint de párrafos, nunca un resultado final o memoria aceptada. Pausa,
 cancelación y comprobación del estado autoritativo del run requieren integración.
 
+## Síntesis final candidata y procedencia
+
+`synthesize_final` requiere estado running aportado por el owner confiable. No
+es una autorización del usuario ni un reemplazo del control de acceso de Bend.
+Rechaza paused, failed, cancelled, superseded, completed y created antes de llamar
+al proveedor. Bend debe volver a verificar el estado al aceptar atómicamente el
+resultado: esta comprobación local no evita una cancelación concurrente.
+
+En full_document analiza la fuente completa con contexto versión 0 y cero
+referencias a párrafos. En sequential_paragraphs lee el checkpoint, valida su
+binding y exige todos los párrafos. La etapa privada `task.article_final_stage@1`
+solicita síntesis de las interpretaciones confirmadas, conservando evidencia,
+inferencia e incertidumbre. Después verifica que el checkpoint no cambió.
+
+`FinalCandidate` conserva run, artículo, fuente y hash, snapshot del prompt, modo,
+cadena y versión, IDs de derivaciones y hash del prompt final. La política
+`article-final-v1` identifica la composición. No es el registro FINAL_DERIVATION
+canónico ni ARTICLE_PROCESSING_RESULT: no agrega timestamps ni decide adopción.
+
+Repetir los mismos inputs conserva candidate_id; el proveedor puede producir
+otro texto. La futura aceptación de Bend debe aplicar idempotencia y detectar
+conflictos, no sobrescribir un resultado anterior. No hay cache final durable.
+
 ## Mapa de modos: objetivo de ejecución
 
 <!-- visual-map:start -->
@@ -136,11 +159,11 @@ visual_map:
 
 ```mermaid
 flowchart LR
-    I["Solicitud validada"] -->|"full_document"| F["Fuente completa bajo presupuesto - pendiente"]
+    I["Solicitud validada"] -->|"full_document"| F["Fuente completa - fake local y límite de bytes"]
     I -->|"sequential_paragraphs"| S["Párrafos en orden - local con fake"]
     F -->|"mantiene"| E["Contexto vacío versión 0"]
     S -->|"confirma cada derivación válida"| C["Contexto y checkpoint - local con fake"]
-    E -->|"tras salida validada"| R["Síntesis candidata - pendiente"]
+    E -->|"tras salida validada"| R["Síntesis candidata - implementada con fake"]
     C -->|"solo al completar párrafos requeridos"| R
 ```
 
@@ -151,7 +174,8 @@ La solicitud distingue dos modos. El completo analiza la fuente íntegra dentro
 del presupuesto y mantiene contexto vacío versión 0. El secuencial confirma
 derivación y contexto antes de avanzar. Solo una finalización válida habilita
 síntesis. El recorrido secuencial está implementado con fake y política de
-contexto por bytes; la síntesis terminal y la integración durable siguen pendientes.
+contexto por bytes. La candidata a síntesis está implementada con fake;
+la aceptación canónica y la integración durable siguen pendientes.
 ```
 
 <!-- visual-map:end -->
@@ -254,13 +278,18 @@ durable corresponde a CR-SST-0225.
 1. Prompt privado y composición completados localmente; falta promoción del draft.
 2. Llamada aislada y normalización completadas con fake; falta ejecución completa y adaptador real.
 3. Recorrido y checkpoints completados con fakes; falta integración durable y compactación por tokens.
-4. Completar envelope final de procedencia, pruebas negativas y revisión final.
+4. Candidata final y procedencia completadas localmente; falta aceptación canónica,
+   presupuesto de tokens, adaptador real e integración del estado de ejecución.
 
 No aceptar memoria automáticamente. Bend conserva autorización y persistencia
 de resultados; resumen draft y propuesta needs_review son proyecciones distintas.
 Esta unidad no entrega la experiencia Fend ni el handoff durable.
 
 ## Validación de la unidad
+
+Finalización: [test_article_processing_finalization.py](../../tests/test_article_processing_finalization.py).
+Se prueban ambos modos, procedencia, identidad estable, estados no elegibles,
+prefijo incompleto, salida inválida y cambio del checkpoint durante la síntesis.
 
 Recorrido: [test_article_processing_sequential.py](../../tests/test_article_processing_sequential.py).
 Casos: orden, contexto acumulado, reintento sin duplicados, fallo del proveedor,

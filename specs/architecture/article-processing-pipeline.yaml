@@ -4,8 +4,8 @@ id: article-processing-pipeline
 status: draft
 owner: sst-chatbot
 request_id: CR-SST-0224
-revision: "2026-09-08-unit-4"
-implementation_status: sequential-checkpoint-local
+revision: "2026-09-09-unit-5"
+implementation_status: final-synthesis-candidate-local
 source_contract:
   repo: 4uentes-orchestor
   path: evidence/requests/CR-SST-0220/article-agent-processing-contract-v1.yaml
@@ -76,10 +76,21 @@ sequential_execution:
   context_policy: "context-prefix-bytes-v1: retain all structured categories and provenance, reject overflow before commit, no compaction or truncation."
   output: "ParagraphCheckpoint only. All paragraphs processed does not finalize the run."
   excludes: "Authorizing scope, cancellation/pause orchestration, durable restart, final synthesis and canonical memory."
+final_synthesis:
+  module: src/app/article_processing/finalization.py
+  entrypoint: synthesize_final
+  output: "Immutable FinalCandidate, not canonical FINAL_DERIVATION or persisted ARTICLE_PROCESSING_RESULT."
+  full_document: "Analyze whole source; context version 0 and no paragraph references."
+  sequential: "Require complete matching checkpoint, synthesize all committed structured analyses, verify unchanged readback."
+  prompt_stage: "task.article_final_stage@1 from private catalog; composition policy article-final-v1."
+  provenance: "Run, article, source snapshot/hash, prompt snapshot, mode, chain/version, paragraph IDs and rendered prompt hash."
+  eligibility: "Only running accepted from trusted owner; Bend must revalidate status atomically on acceptance. Not user-controlled authorization."
+  retry: "Stable candidate identity for same bound request/checkpoint/policy; model calls and output may vary, so Bend must reject duplicate/conflicting acceptance."
+  persistence: "No writes or status transitions. Timestamps and canonical final/result identities belong to Bend."
 not_implemented:
   - real provider adapter and model input-token accounting
   - token-aware context compaction and lifecycle cancellation/pause integration
-  - final provenance envelope
+  - canonical final acceptance and result persistence
   - durable Bend transport under CR-SST-0225
   - frontend experience and end-to-end QA
 open_decisions:
@@ -87,6 +98,9 @@ open_decisions:
   - "TODO: Integrate checkpoint compare-and-swap and caller-triggered retries with Bend without owning production scheduling."
   - "TODO: Map local immutable values to the approved Bend wire contract in CR-SST-0225."
 local_evidence:
+  - src/app/article_processing/finalization.py
+  - src/app/prompts/catalog/tasks/article_final_stage.yaml
+  - tests/test_article_processing_finalization.py
   - src/app/article_processing/sequential.py
   - tests/test_article_processing_sequential.py
   - src/app/article_processing/provider.py

@@ -101,6 +101,6 @@ def test_owner_spec_is_indexed_and_evidence_exists():
     spec = yaml.safe_load((root / path).read_text(encoding="utf-8"))
     index = yaml.safe_load((root / "specs/00-index.yaml").read_text(encoding="utf-8"))
     assert any(entry["path"] == path for entry in index["entries"]["architecture"])
-    assert spec["implementation_status"] == "sequential-checkpoint-local"
+    assert spec["implementation_status"] == "final-synthesis-candidate-local"
     for ref in spec["local_evidence"]:
         assert (root / ref).is_file()

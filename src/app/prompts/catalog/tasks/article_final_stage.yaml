@@ -1,0 +1,16 @@
+id: task.article_final_stage
+version: "1"
+status: draft
+description: Final synthesis stage for confirmed article paragraph analyses.
+visibility: internal_private
+trace_policy: metadata_only
+provider_cache_policy: none
+compatible_providers: [any]
+compatible_models: [any]
+variables: []
+messages:
+  - role: system
+    template: |
+      Synthesize all committed paragraph analyses into one final interpretation.
+      Distinguish evidence, inference, uncertainty and unresolved questions.
+      Preserve contradictions and do not invent missing evidence.

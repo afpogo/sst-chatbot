@@ -106,6 +106,16 @@ def analyze_once(
         )
     except (CompositionError, UnicodeError):
         raise ProviderBoundaryError("invalid_analysis_input") from None
+    return analyze_rendered(rendered, provider=provider, provider_limits=limits)
+
+
+def analyze_rendered(rendered, *, provider: ArticleProvider,
+                     provider_limits: ProviderLimits) -> ValidatedAnalysis:
+    """Internal trusted-composer boundary; never accept caller-supplied messages."""
+    try:
+        limits = ProviderLimits.model_validate(provider_limits)
+    except ValidationError:
+        raise ProviderBoundaryError("invalid_provider_limits") from None
     messages = tuple(ProviderMessage(m.role, m.content) for m in rendered.messages)
     try:
         reply = provider.complete(messages, max_output_tokens=limits.max_output_tokens,
