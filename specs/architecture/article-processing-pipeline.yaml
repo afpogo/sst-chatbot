@@ -1,0 +1,127 @@
+version: 1
+kind: architecture
+id: article-processing-pipeline
+status: draft
+owner: sst-chatbot
+request_id: CR-SST-0224
+revision: "2026-09-10-unit-6"
+implementation_status: execution-guard-local
+source_contract:
+  repo: 4uentes-orchestor
+  path: evidence/requests/CR-SST-0220/article-agent-processing-contract-v1.yaml
+  id: sst-article-agent-processing-v1
+  version: "1.0.0"
+authority:
+  local: "Typed article-analysis values and future provider execution."
+  external: "Bend authorizes articles and owns canonical persistence; control-plane owns lifecycle."
+  denies: [article_authorization, canonical_persistence, automatic_memory_adoption, deployment]
+local_contract:
+  module: src/app/article_processing/contracts.py
+  wire_protocol: false
+  scope: [tenant_id, account_id, user_id, application_id]
+  modes: [full_document, sequential_paragraphs]
+  source: "Exact UTF-8 SHA-256 verification; no normalization or silent truncation."
+  paragraphs: "Nonempty immutable tuple with ascending unique upstream ordinals and matching source ID."
+  prompt: "Immutable version identity; exact user-instructions hash."
+  default_profile: open-general-analysis
+  output_schema: article-analysis-v1
+  output_fields: [evidence, inferences, uncertainties, open_questions, synthesis]
+  output_authority: "Content candidate only; cannot set status, scope, tool calls or persistence commands."
+  strict_validation: "Reject unknown fields and coercion; revalidate nested model instances."
+  privacy: "Private content excluded from repr and stringified validation errors. Serialization and errors() still contain private values and must never be logged."
+target_semantics:
+  full_document: "No paragraph derivations; context remains empty at version 0."
+  sequential_paragraphs: "Commit validated derivation and bounded context before advancing; resume only from confirmed checkpoint."
+  finalization: "No successful result for failed, paused, cancelled or superseded runs."
+  prompt_change: "Requires new run or explicit fork; model immutability alone does not enforce identity uniqueness."
+  memory: "Result, draft summary and needs_review proposal are independent; adoption requires an authorized user decision in Bend."
+prompt_composition:
+  module: src/app/article_processing/prompts.py
+  catalog_id: task.article_analysis
+  catalog_version: "1"
+  status: draft
+  supported_profile: open-general-analysis
+  supported_profile_version: "1"
+  guardrails_version: "1"
+  layers: [system_guardrails, default_analysis, selected_profile, user_instructions, source_and_context, output_schema]
+  roles: [system, system, system, human, human, system]
+  custom_instructions: "JSON-encoded user data; never interpreted as template or privileged message."
+  compatibility: "Reject unknown profile and versions before rendering; revalidate incoming contract instances."
+  bounds: "Caller-supplied positive UTF-8 byte ceilings for instructions, source, context and rendered content. Reject overflow without truncation. Not a model token budget."
+  sequential_input: "Resolve ordinal from immutable sequence; context provided by future checkpoint layer, not verified here."
+  trace: "Existing renderer exposes content hash and metadata only; the render object itself remains private."
+  non_goals: "No persistent agent creation, chat personality selection, profile authoring UI or autonomous execution."
+provider_boundary:
+  module: src/app/article_processing/provider.py
+  port: ArticleProvider
+  entrypoint: analyze_once
+  adapters_available: "Deterministic test fake only; no real provider adapter is wired."
+  output: "ValidatedAnalysis contains AnalysisContent and prompt hash, not run completion or canonical persistence."
+  parsing: "One JSON object with exact fields and explicit schema_version; reject duplicates, nonfinite constants, blank content, coercion and extra authority fields."
+  normalization: "JSON arrays become immutable tuples; array item types are not coerced."
+  bounds: "Enforce response UTF-8 bytes after receipt; pass output token cap and timeout to the adapter."
+  timeout: "Adapters must enforce deadlines. The synchronous boundary does not interrupt a hung adapter."
+  transport_safety: "Future real adapter must bound response streaming before buffering; every call already requires the local execution guard."
+  failures: "Sanitized fixed codes; no automatic retry, response repair, body logging or chained public exception details."
+sequential_execution:
+  module: src/app/article_processing/sequential.py
+  entrypoint: run_paragraphs
+  store_port: CheckpointStore
+  implemented_adapter: "Test-only in-memory fake; no durable persistence."
+  binding: "Hash of exact request, composition/provider/execution limits and budget policy. Reject mismatched run, scope, source, prompt or limits on resume."
+  ordering: "Load and validate committed prefix; process only remaining ordinals in ascending upstream order."
+  commit: "Adapter must atomically compare version and append one entry. Readback must equal candidate before next provider call."
+  idempotency: "Deterministic per-paragraph keys; confirmed entries skipped on retry. Concurrent provider calls may repeat, but adapter CAS must prevent duplicate commits."
+  recovery: "Caller-triggered retry reloads confirmed state even after lost commit acknowledgment; no automatic retry or skipping."
+  context_policy: "context-prefix-bytes-v1: retain all structured categories and provenance, reject overflow before commit, no compaction or truncation."
+  output: "ParagraphCheckpoint only. All paragraphs processed does not finalize the run."
+  excludes: "Authorizing scope, durable restart, provider-side interruption, final acceptance and canonical memory."
+final_synthesis:
+  module: src/app/article_processing/finalization.py
+  entrypoint: synthesize_final
+  output: "Immutable FinalCandidate, not canonical FINAL_DERIVATION or persisted ARTICLE_PROCESSING_RESULT."
+  full_document: "Analyze whole source; context version 0 and no paragraph references."
+  sequential: "Require complete matching checkpoint, synthesize all committed structured analyses, verify unchanged readback."
+  prompt_stage: "task.article_final_stage@1 from private catalog; composition policy article-final-v1."
+  provenance: "Run, article, source snapshot/hash, prompt snapshot, mode, chain/version, paragraph IDs and rendered prompt hash."
+  eligibility: "Execution guard reads authoritative status before and after every provider call; only running is accepted. Bend must revalidate status atomically on acceptance."
+  retry: "Stable candidate identity for same bound request/checkpoint/policy; model calls and output may vary, so Bend must reject duplicate/conflicting acceptance."
+  persistence: "No writes or status transitions. Timestamps and canonical final/result identities belong to Bend."
+execution_control:
+  module: src/app/article_processing/execution.py
+  lifecycle_port: RunLifecyclePort
+  token_counter_port: InputTokenCounter
+  policy: "Versioned model-specific counter, positive input ceiling and context-window ceiling. Reserve the configured maximum output before calling the provider."
+  timing: "Read authoritative run status before the call and again after the provider returns. Discard the reply if status is no longer running."
+  failures: "Fail closed with fixed codes on unavailable lifecycle state, invalid counter output, input overflow or context-window overflow."
+  scope: "Ports are required dependencies; only deterministic fakes exist. This is not cancellation of an in-flight synchronous provider transport."
+not_implemented:
+  - real provider adapter and real model-specific token-counter adapter
+  - token-aware context compaction and provider-side interruption of in-flight calls
+  - durable Bend lifecycle/status adapter
+  - canonical final acceptance and result persistence
+  - durable Bend transport under CR-SST-0225
+  - frontend experience and end-to-end QA
+open_decisions:
+  - "TODO: Select production token ceilings per provider/model and a deterministic compaction policy."
+  - "TODO: Integrate checkpoint compare-and-swap and caller-triggered retries with Bend without owning production scheduling."
+  - "TODO: Map local immutable values to the approved Bend wire contract in CR-SST-0225."
+local_evidence:
+  - src/app/article_processing/finalization.py
+  - src/app/prompts/catalog/tasks/article_final_stage.yaml
+  - tests/test_article_processing_finalization.py
+  - src/app/article_processing/sequential.py
+  - tests/test_article_processing_sequential.py
+  - src/app/article_processing/provider.py
+  - tests/test_article_processing_provider.py
+  - src/app/article_processing/execution.py
+  - tests/test_article_processing_execution.py
+  - src/app/article_processing/prompts.py
+  - src/app/prompts/catalog/tasks/article_analysis.yaml
+  - tests/test_article_processing_prompts.py
+  - src/app/article_processing/contracts.py
+  - tests/test_article_processing_contracts.py
+  - docs/architecture/article-processing-pipeline.md
+validation:
+  - "python -m pytest tests/test_article_processing_contracts.py"
+  - "python scripts/check.py"
