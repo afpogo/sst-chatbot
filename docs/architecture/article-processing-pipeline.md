@@ -3,8 +3,8 @@
 ## Rol, estado y fuentes
 
 Rol primario: guía técnica explicativa. Owner: sst-chatbot.
-Estado: **recorrido, checkpoints y candidata a síntesis final con fakes implementados**,
-CR-SST-0224, revisión 2026-09-09-unit-5. Aceptación canónica e integración pendientes.
+Estado: **recorrido, checkpoints, candidata final y control de ejecución con fakes implementados**,
+CR-SST-0224, revisión 2026-09-10-unit-6. Aceptación canónica e integración pendientes.
 No es un runbook ni autoriza despliegues.
 
 Fuente local: [spec del pipeline](../../specs/architecture/article-processing-pipeline.yaml).
@@ -28,7 +28,7 @@ anidadas. No es un contrato wire para Bend.
 - `AnalysisContent`: evidencia, inferencias, incertidumbre, preguntas y síntesis. No admite estado de negocio, permisos, aceptación de memoria ni comandos.
 
 Los valores no verifican por sí solos acceso, unicidad durable de run, presupuesto
-de tokens ni si las afirmaciones generadas son verdaderas. El parser JSON del
+de tokens por sí solos ni si las afirmaciones generadas son verdaderas. El parser JSON del
 proveedor y su normalización a los tipos locales se implementaron en la unidad 3.
 Nunca debe utilizarse `model_construct` como vía de validación de entradas externas.
 
@@ -53,7 +53,8 @@ La identidad única y persistencia de runs siguen siendo responsabilidad de Bend
 Los límites de composición son parámetros obligatorios del código owner:
 bytes UTF-8 de instrucciones, fuente, contexto y mensajes renderizados. Se
 rechaza exceso sin truncado. No se presentan como tokens ni como configuración
-libre del usuario. Falta la política de tokens del proveedor. El contexto
+libre del usuario. La política separada de ejecución exige un contador compatible
+con el proveedor/modelo y aplica sus techos antes de cada llamada. El contexto
 secuencial lo aportará el checkpoint; esta función no certifica su procedencia
 ni decide el siguiente párrafo.
 
@@ -87,7 +88,25 @@ y hash del prompt: no es una FINAL_DERIVATION ni un run completado. No hay retri
 El límite de bytes se verifica tras recibir el texto. El adaptador real futuro
 deberá limitar el transporte antes de acumularlo en memoria y respetar timeout y
 tokens de salida. El puerto síncrono no interrumpe un adaptador colgado; estos
-tests simulan timeout, no prueban cancelación real. Falta medir tokens de entrada.
+tests simulan timeout y cambio de estado, no prueban cancelación real del transporte.
+
+## Control de lifecycle y presupuesto de tokens
+
+`ExecutionControl` exige dos puertos: `RunLifecyclePort`, que consulta el estado
+autoritativo de un run, e `InputTokenCounter`, que cuenta los mensajes ya
+renderizados según el proveedor/modelo elegido. `ExecutionLimits` versiona esa
+política y fija tanto el máximo de entrada como la ventana total de contexto.
+
+Antes de llamar al proveedor se exige `running`, se cuenta la entrada y se
+reserva el máximo configurado de salida dentro de la ventana. Al regresar se
+consulta nuevamente el estado: si el run fue pausado, cancelado o terminado,
+la respuesta se descarta antes del parseo, checkpoint o candidata final. Fallas
+del lector o contador cierran la ejecución con códigos saneados.
+
+El fake demuestra el protocolo, no la exactitud de tokens de un modelo real.
+El futuro adaptador debe aportar su contador compatible y limitar streaming
+antes de acumular la respuesta. Tampoco se afirma que el puerto síncrono pueda
+interrumpir una petición en vuelo: se evita adoptar su respuesta cuando vuelve.
 
 ## Recorrido secuencial y recuperación local
 
@@ -97,7 +116,8 @@ con ordinal, versión de contexto de entrada, snapshot del prompt, hash renderiz
 e identidad determinista. El adaptador confirma atómicamente la nueva versión y
 el ejecutor verifica su readback antes de avanzar.
 
-La cadena se liga mediante hash al request completo y a la política/límites.
+La cadena se liga mediante hash al request completo y a las políticas/límites
+de composición, proveedor y ejecución.
 Cambiar scope, fuente, prompt o límites dentro del mismo run se rechaza. No prueba
 autorización: el adaptador debe aplicar el scope validado por Bend. Las claves de
 párrafo son estables y el reintento explícito salta entradas confirmadas. Un fallo
@@ -113,16 +133,17 @@ El store es un puerto con un fake en tests. Debe comparar versión y agregar una
 entrada de forma atómica. Llamadas concurrentes al modelo podrían repetirse; el
 CAS del adaptador impide confirmar dos veces. No se afirma ejecución del modelo
 exactamente una vez ni durabilidad al reiniciar procesos. El objeto devuelto es
-un checkpoint de párrafos, nunca un resultado final o memoria aceptada. Pausa,
-cancelación y comprobación del estado autoritativo del run requieren integración.
+un checkpoint de párrafos, nunca un resultado final o memoria aceptada. La
+consulta de estado está definida por puerto y probada con fake; su integración
+durable con el owner sigue pendiente.
 
 ## Síntesis final candidata y procedencia
 
-`synthesize_final` requiere estado running aportado por el owner confiable. No
-es una autorización del usuario ni un reemplazo del control de acceso de Bend.
-Rechaza paused, failed, cancelled, superseded, completed y created antes de llamar
-al proveedor. Bend debe volver a verificar el estado al aceptar atómicamente el
-resultado: esta comprobación local no evita una cancelación concurrente.
+`synthesize_final` usa el mismo lector de lifecycle antes y después de la llamada.
+No es una autorización del usuario ni reemplaza el control de acceso de Bend.
+Rechaza estados distintos de running antes de llamar y descarta la respuesta si
+el estado cambia durante la llamada. Bend debe volver a verificar el estado al
+aceptar atómicamente el resultado.
 
 En full_document analiza la fuente completa con contexto versión 0 y cero
 referencias a párrafos. En sequential_paragraphs lee el checkpoint, valida su
@@ -152,8 +173,8 @@ visual_map:
   abstraction_level: "Responsabilidades lógicas del pipeline."
   source_refs:
     - "specs/architecture/article-processing-pipeline.yaml"
-  observed_at: "2026-09-07"
-  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. El mapa representa el objetivo pendiente, no runtime conectado."
+  observed_at: "2026-09-10"
+  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. Representa implementación local con fakes; integraciones reales pendientes."
   textual_fallback_required: true
 ```
 
@@ -193,8 +214,8 @@ visual_map:
   abstraction_level: "Responsabilidades lógicas del pipeline."
   source_refs:
     - "specs/architecture/article-processing-pipeline.yaml"
-  observed_at: "2026-09-07"
-  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. El mapa representa el objetivo pendiente, no runtime conectado."
+  observed_at: "2026-09-10"
+  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. Representa implementación local con fakes; integraciones reales pendientes."
   textual_fallback_required: true
 ```
 
@@ -236,8 +257,8 @@ visual_map:
   abstraction_level: "Responsabilidades lógicas del pipeline."
   source_refs:
     - "specs/architecture/article-processing-pipeline.yaml"
-  observed_at: "2026-09-07"
-  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. El mapa representa el objetivo pendiente, no runtime conectado."
+  observed_at: "2026-09-10"
+  authority_boundary: "Vista derivada; la spec owner conserva autoridad local. Representa implementación local con fakes; integraciones reales pendientes."
   textual_fallback_required: true
 ```
 
@@ -246,8 +267,13 @@ sequenceDiagram
     participant C as Ejecutor secuencial local
     participant L as Proveedor fake
     participant K as Puerto checkpoint con fake
+    participant E as Control de ejecución
+    C->>E: Verificar running y presupuesto de tokens
+    E-->>C: Llamada habilitada
     C->>L: Párrafo y último contexto confirmado
     L-->>C: Salida candidata
+    C->>E: Verificar que el run siga running
+    E-->>C: Respuesta todavía elegible
     C->>C: Validar contenido y procedencia
     alt Candidato válido
         C->>K: Confirmar derivación y contexto
@@ -263,7 +289,8 @@ sequenceDiagram
 ### Fallback textual
 
 ```text
-El ejecutor local envía párrafo y contexto confirmado al proveedor fake.
+El ejecutor local verifica estado y presupuesto antes de enviar párrafo y
+contexto confirmado al proveedor fake, y vuelve a verificar estado al recibirlo.
 Si el candidato pasa validación, confirma derivación y contexto mediante un
 puerto y verifica readback antes de avanzar. Si falla, detiene y el reintento
 recarga el último checkpoint confirmado. Puerto y algoritmo están implementados
@@ -276,10 +303,11 @@ durable corresponde a CR-SST-0225.
 ## Próximas unidades dentro del plan aprobado
 
 1. Prompt privado y composición completados localmente; falta promoción del draft.
-2. Llamada aislada y normalización completadas con fake; falta ejecución completa y adaptador real.
+2. Llamada aislada y normalización completadas con fake; falta adaptador real.
 3. Recorrido y checkpoints completados con fakes; falta integración durable y compactación por tokens.
-4. Candidata final y procedencia completadas localmente; falta aceptación canónica,
-   presupuesto de tokens, adaptador real e integración del estado de ejecución.
+4. Candidata final y procedencia completadas localmente; falta aceptación canónica.
+5. Guard de lifecycle y presupuesto implementado con puertos y fakes; faltan los
+   adaptadores reales de estado y conteo específico del modelo.
 
 No aceptar memoria automáticamente. Bend conserva autorización y persistencia
 de resultados; resumen draft y propuesta needs_review son proyecciones distintas.
@@ -300,6 +328,9 @@ Tests: [test_article_processing_contracts.py](../../tests/test_article_processin
 Composición: [test_article_processing_prompts.py](../../tests/test_article_processing_prompts.py).
 Proveedor: [test_article_processing_provider.py](../../tests/test_article_processing_provider.py),
 con fake y casos de JSON inválido, estados no exitosos, límites y errores saneados.
+Ejecución: [test_article_processing_execution.py](../../tests/test_article_processing_execution.py),
+con estado previo/posterior, reserva de salida, límites de entrada/ventana,
+contador inválido y descarte de respuesta ante pausa concurrente.
 Se prueban capas, inyección como datos sin nuevos roles, hash estable, cambios de
 instrucciones, límites de bytes, selección de párrafo, privacidad de metadata y
 rechazo de snapshots incompatibles. Estos tests no demuestran inmunidad del LLM.

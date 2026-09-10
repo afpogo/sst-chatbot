@@ -8,6 +8,9 @@ from typing import Literal, Protocol
 from pydantic import Field, ValidationError
 
 from app.article_processing.contracts import AnalysisContent, AnalysisRequest, ContractValue
+from app.article_processing.execution import (
+    ExecutionControl, authorize_provider_call, confirm_provider_call,
+)
 from app.article_processing.prompts import CompositionError, CompositionLimits, compose_article_prompt
 
 
@@ -92,6 +95,7 @@ def parse_analysis_reply(text: str, *, max_response_bytes: int) -> AnalysisConte
 def analyze_once(
     request: AnalysisRequest, *, provider: ArticleProvider,
     composition_limits: CompositionLimits, provider_limits: ProviderLimits,
+    execution_control: ExecutionControl,
     paragraph_ordinal: int | None = None, bounded_context: str = "",
 ) -> ValidatedAnalysis:
     """One validated call is not a completed run or persisted result."""
@@ -106,17 +110,25 @@ def analyze_once(
         )
     except (CompositionError, UnicodeError):
         raise ProviderBoundaryError("invalid_analysis_input") from None
-    return analyze_rendered(rendered, provider=provider, provider_limits=limits)
+    return analyze_rendered(
+        rendered, provider=provider, provider_limits=limits,
+        execution_control=execution_control, derivation_run_id=request.derivation_run_id,
+    )
 
 
 def analyze_rendered(rendered, *, provider: ArticleProvider,
-                     provider_limits: ProviderLimits) -> ValidatedAnalysis:
+                     provider_limits: ProviderLimits, execution_control: ExecutionControl,
+                     derivation_run_id: str) -> ValidatedAnalysis:
     """Internal trusted-composer boundary; never accept caller-supplied messages."""
     try:
         limits = ProviderLimits.model_validate(provider_limits)
     except ValidationError:
         raise ProviderBoundaryError("invalid_provider_limits") from None
     messages = tuple(ProviderMessage(m.role, m.content) for m in rendered.messages)
+    authorize_provider_call(
+        execution_control, derivation_run_id=derivation_run_id, messages=messages,
+        max_output_tokens=limits.max_output_tokens,
+    )
     try:
         reply = provider.complete(messages, max_output_tokens=limits.max_output_tokens,
                                   timeout_seconds=limits.timeout_seconds)
@@ -125,6 +137,7 @@ def analyze_rendered(rendered, *, provider: ArticleProvider,
     except Exception:
         # No exception text, body logging or automatic retry across this boundary.
         raise ProviderBoundaryError("provider_failure") from None
+    confirm_provider_call(execution_control, derivation_run_id=derivation_run_id)
     if not isinstance(reply, ProviderReply):
         raise ProviderBoundaryError("invalid_provider_reply")
     if reply.status == "truncated":

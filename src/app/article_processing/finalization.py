@@ -10,6 +10,7 @@ from app.article_processing.contracts import (
     AnalysisContent, AnalysisRequest, ContractValue, Digest, Identifier, ProcessingMode, content_hash,
 )
 from app.article_processing.prompts import CompositionLimits, compose_article_prompt
+from app.article_processing.execution import ExecutionControl, ExecutionGuardError, validate_control
 from app.article_processing.provider import (
     ArticleProvider, ProviderLimits, analyze_once, analyze_rendered,
 )
@@ -44,12 +45,12 @@ class FinalCandidate(ContractValue):
 def synthesize_final(
     request: AnalysisRequest, *, provider: ArticleProvider,
     composition_limits: CompositionLimits, provider_limits: ProviderLimits,
-    run_status: str, store: CheckpointStore | None = None,
+    execution_control: ExecutionControl, store: CheckpointStore | None = None,
 ) -> FinalCandidate:
-    """Trusted internal call: run_status must come from the authorized owner.
+    """Build a candidate only while the owner reports an eligible run.
 
-    No persistence or status transition. Bend must recheck status atomically on
-    acceptance. This local check alone cannot stop concurrent cancellation.
+    No persistence or status transition. Bend must still recheck status
+    atomically on acceptance.
     """
     try:
         request = AnalysisRequest.model_validate(request)
@@ -57,16 +58,23 @@ def synthesize_final(
         provider_limits = ProviderLimits.model_validate(provider_limits)
     except ValidationError:
         raise FinalizationError("invalid_final_input") from None
-    if run_status != "running":
-        raise FinalizationError("run_not_eligible")
-    binding = _binding(request, composition_limits, provider_limits)
+    try:
+        execution_control = validate_control(execution_control)
+    except ValueError:
+        raise FinalizationError("invalid_final_input") from None
+    binding = _binding(request, composition_limits, provider_limits, execution_control.limits)
     version, refs = 0, ()
     checkpoint_hash = ""
     if request.processing_mode == "full_document":
         if store is not None:
             raise FinalizationError("full_document_has_no_checkpoint")
-        result = analyze_once(request, provider=provider, composition_limits=composition_limits,
-                              provider_limits=provider_limits)
+        try:
+            result = analyze_once(
+                request, provider=provider, composition_limits=composition_limits,
+                provider_limits=provider_limits, execution_control=execution_control,
+            )
+        except ExecutionGuardError as error:
+            raise FinalizationError(str(error)) from None
     else:
         if store is None:
             raise FinalizationError("checkpoint_required")
@@ -102,7 +110,13 @@ def synthesize_final(
             "messages": tuple(messages),
             "trace_metadata": rendered.trace_metadata.model_copy(update={"prompt_hash": digest}),
         })
-        result = analyze_rendered(rendered, provider=provider, provider_limits=provider_limits)
+        try:
+            result = analyze_rendered(
+                rendered, provider=provider, provider_limits=provider_limits,
+                execution_control=execution_control, derivation_run_id=request.derivation_run_id,
+            )
+        except ExecutionGuardError as error:
+            raise FinalizationError(str(error)) from None
         # Do not emit a candidate if checkpoint changed during the provider call.
         try:
             observed = store.load(request.derivation_run_id)

@@ -7,7 +7,7 @@ from app.article_processing.provider import ProviderReply, ProviderBoundaryError
 from app.article_processing.sequential import CheckpointError, context_text, run_paragraphs
 from tests.test_article_processing_contracts import request_data, sequence
 from tests.test_article_processing_prompts import LIMITS
-from tests.test_article_processing_provider import FakeProvider, LIMIT
+from tests.test_article_processing_provider import FakeProvider, LIMIT, execution_control
 
 COMPOSITION = LIMITS.model_copy(update={"max_context_bytes": 16000, "max_rendered_bytes": 30000})
 
@@ -42,9 +42,10 @@ def request():
     }))
 
 
-def execute(store, provider, value=None, limits=COMPOSITION):
+def execute(store, provider, value=None, limits=COMPOSITION, control=None):
     return run_paragraphs(value or request(), provider=provider, store=store,
-                          composition_limits=limits, provider_limits=LIMIT)
+                          composition_limits=limits, provider_limits=LIMIT,
+                          execution_control=control or execution_control())
 
 
 def test_order_context_and_reentry_without_duplicate_calls():
@@ -104,12 +105,13 @@ def test_failed_write_never_advances():
     assert len(provider.calls) == 1
 
 
-@pytest.mark.parametrize("kind", ["scope", "prompt", "source", "budget"])
+@pytest.mark.parametrize("kind", ["scope", "prompt", "source", "budget", "token"])
 def test_same_run_cannot_mix_binding(kind):
     store, provider = MemoryStore(), FakeProvider()
     execute(store, provider)
     value = request()
     limits = COMPOSITION
+    control = execution_control()
     if kind == "scope":
         value = value.model_copy(update={"scope": value.scope.model_copy(update={"tenant_id": "other"})})
     elif kind == "prompt":
@@ -117,10 +119,13 @@ def test_same_run_cannot_mix_binding(kind):
     elif kind == "source":
         source = value.source.model_copy(update={"content": "different", "content_hash": content_hash("different")})
         value = value.model_copy(update={"source": source})
-    else:
+    elif kind == "budget":
         limits = COMPOSITION.model_copy(update={"max_context_bytes": 15999})
+    else:
+        token_limits = control.limits.model_copy(update={"max_input_tokens": 2047})
+        control = execution_control(limits=token_limits)
     with pytest.raises(CheckpointError, match="checkpoint_binding_mismatch"):
-        execute(store, provider, value, limits)
+        execute(store, provider, value, limits, control)
     assert len(provider.calls) == 3
 
 

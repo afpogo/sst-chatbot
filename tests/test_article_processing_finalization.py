@@ -5,13 +5,14 @@ from app.article_processing.finalization import FinalizationError, synthesize_fi
 from app.article_processing.contracts import AnalysisRequest
 from app.article_processing.provider import ProviderBoundaryError, ProviderReply
 from tests.test_article_processing_contracts import request_data
-from tests.test_article_processing_provider import FakeProvider, LIMIT
+from tests.test_article_processing_provider import FakeProvider, LIMIT, execution_control
 from tests.test_article_processing_sequential import MemoryStore, request, execute, COMPOSITION
 
 
-def final(value, fake, store=None, status="running"):
+def final(value, fake, store=None, status="running", control=None):
     return synthesize_final(value, provider=fake, composition_limits=COMPOSITION,
-                            provider_limits=LIMIT, run_status=status, store=store)
+                            provider_limits=LIMIT,
+                            execution_control=control or execution_control(status=status), store=store)
 
 
 def test_full_document_provenance_empty_chain_and_repeat_identity():

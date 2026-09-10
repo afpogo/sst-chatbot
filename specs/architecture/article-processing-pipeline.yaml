@@ -4,8 +4,8 @@ id: article-processing-pipeline
 status: draft
 owner: sst-chatbot
 request_id: CR-SST-0224
-revision: "2026-09-09-unit-5"
-implementation_status: final-synthesis-candidate-local
+revision: "2026-09-10-unit-6"
+implementation_status: execution-guard-local
 source_contract:
   repo: 4uentes-orchestor
   path: evidence/requests/CR-SST-0220/article-agent-processing-contract-v1.yaml
@@ -61,21 +61,21 @@ provider_boundary:
   normalization: "JSON arrays become immutable tuples; array item types are not coerced."
   bounds: "Enforce response UTF-8 bytes after receipt; pass output token cap and timeout to the adapter."
   timeout: "Adapters must enforce deadlines. The synchronous boundary does not interrupt a hung adapter."
-  transport_safety: "Future real adapter must bound response streaming before buffering and enforce model input-token budget."
+  transport_safety: "Future real adapter must bound response streaming before buffering; every call already requires the local execution guard."
   failures: "Sanitized fixed codes; no automatic retry, response repair, body logging or chained public exception details."
 sequential_execution:
   module: src/app/article_processing/sequential.py
   entrypoint: run_paragraphs
   store_port: CheckpointStore
   implemented_adapter: "Test-only in-memory fake; no durable persistence."
-  binding: "Hash of exact request, composition/provider limits and budget policy. Reject mismatched run, scope, source, prompt or limits on resume."
+  binding: "Hash of exact request, composition/provider/execution limits and budget policy. Reject mismatched run, scope, source, prompt or limits on resume."
   ordering: "Load and validate committed prefix; process only remaining ordinals in ascending upstream order."
   commit: "Adapter must atomically compare version and append one entry. Readback must equal candidate before next provider call."
   idempotency: "Deterministic per-paragraph keys; confirmed entries skipped on retry. Concurrent provider calls may repeat, but adapter CAS must prevent duplicate commits."
   recovery: "Caller-triggered retry reloads confirmed state even after lost commit acknowledgment; no automatic retry or skipping."
   context_policy: "context-prefix-bytes-v1: retain all structured categories and provenance, reject overflow before commit, no compaction or truncation."
   output: "ParagraphCheckpoint only. All paragraphs processed does not finalize the run."
-  excludes: "Authorizing scope, cancellation/pause orchestration, durable restart, final synthesis and canonical memory."
+  excludes: "Authorizing scope, durable restart, provider-side interruption, final acceptance and canonical memory."
 final_synthesis:
   module: src/app/article_processing/finalization.py
   entrypoint: synthesize_final
@@ -84,17 +84,26 @@ final_synthesis:
   sequential: "Require complete matching checkpoint, synthesize all committed structured analyses, verify unchanged readback."
   prompt_stage: "task.article_final_stage@1 from private catalog; composition policy article-final-v1."
   provenance: "Run, article, source snapshot/hash, prompt snapshot, mode, chain/version, paragraph IDs and rendered prompt hash."
-  eligibility: "Only running accepted from trusted owner; Bend must revalidate status atomically on acceptance. Not user-controlled authorization."
+  eligibility: "Execution guard reads authoritative status before and after every provider call; only running is accepted. Bend must revalidate status atomically on acceptance."
   retry: "Stable candidate identity for same bound request/checkpoint/policy; model calls and output may vary, so Bend must reject duplicate/conflicting acceptance."
   persistence: "No writes or status transitions. Timestamps and canonical final/result identities belong to Bend."
+execution_control:
+  module: src/app/article_processing/execution.py
+  lifecycle_port: RunLifecyclePort
+  token_counter_port: InputTokenCounter
+  policy: "Versioned model-specific counter, positive input ceiling and context-window ceiling. Reserve the configured maximum output before calling the provider."
+  timing: "Read authoritative run status before the call and again after the provider returns. Discard the reply if status is no longer running."
+  failures: "Fail closed with fixed codes on unavailable lifecycle state, invalid counter output, input overflow or context-window overflow."
+  scope: "Ports are required dependencies; only deterministic fakes exist. This is not cancellation of an in-flight synchronous provider transport."
 not_implemented:
-  - real provider adapter and model input-token accounting
-  - token-aware context compaction and lifecycle cancellation/pause integration
+  - real provider adapter and real model-specific token-counter adapter
+  - token-aware context compaction and provider-side interruption of in-flight calls
+  - durable Bend lifecycle/status adapter
   - canonical final acceptance and result persistence
   - durable Bend transport under CR-SST-0225
   - frontend experience and end-to-end QA
 open_decisions:
-  - "TODO: Select bounded token budgets and compaction policy before execution implementation."
+  - "TODO: Select production token ceilings per provider/model and a deterministic compaction policy."
   - "TODO: Integrate checkpoint compare-and-swap and caller-triggered retries with Bend without owning production scheduling."
   - "TODO: Map local immutable values to the approved Bend wire contract in CR-SST-0225."
 local_evidence:
@@ -105,6 +114,8 @@ local_evidence:
   - tests/test_article_processing_sequential.py
   - src/app/article_processing/provider.py
   - tests/test_article_processing_provider.py
+  - src/app/article_processing/execution.py
+  - tests/test_article_processing_execution.py
   - src/app/article_processing/prompts.py
   - src/app/prompts/catalog/tasks/article_analysis.yaml
   - tests/test_article_processing_prompts.py

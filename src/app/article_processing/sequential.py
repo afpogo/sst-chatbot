@@ -10,6 +10,7 @@ from app.article_processing.contracts import (
     AnalysisContent, AnalysisRequest, ContractValue, Digest, Identifier, content_hash,
 )
 from app.article_processing.prompts import CompositionLimits
+from app.article_processing.execution import ExecutionControl, validate_control
 from app.article_processing.provider import ArticleProvider, ProviderLimits, analyze_once
 
 
@@ -50,12 +51,13 @@ class CheckpointStore(Protocol):
         ...
 
 
-def _binding(request, composition_limits, provider_limits):
+def _binding(request, composition_limits, provider_limits, execution_limits):
     # Hash only; raw input is never emitted as operational evidence.
     payload = {
         "request": request.model_dump(mode="json"),
         "composition_limits": composition_limits.model_dump(mode="json"),
         "provider_limits": provider_limits.model_dump(mode="json"),
+        "execution_limits": execution_limits.model_dump(mode="json"),
         "budget_policy_version": "context-prefix-bytes-v1",
     }
     return content_hash(json.dumps(payload, sort_keys=True, ensure_ascii=True))
@@ -104,6 +106,7 @@ def _validate_checkpoint(value, request, binding, limit):
 def run_paragraphs(
     request: AnalysisRequest, *, provider: ArticleProvider, store: CheckpointStore,
     composition_limits: CompositionLimits, provider_limits: ProviderLimits,
+    execution_control: ExecutionControl,
 ) -> ParagraphCheckpoint:
     """Resume a committed prefix. Return paragraphs only, not a completed run.
 
@@ -116,9 +119,13 @@ def run_paragraphs(
         provider_limits = ProviderLimits.model_validate(provider_limits)
     except ValidationError:
         raise CheckpointError("invalid_execution_input") from None
+    try:
+        execution_control = validate_control(execution_control)
+    except ValueError:
+        raise CheckpointError("invalid_execution_input") from None
     if request.processing_mode != "sequential_paragraphs":
         raise CheckpointError("sequential_mode_required")
-    binding = _binding(request, composition_limits, provider_limits)
+    binding = _binding(request, composition_limits, provider_limits, execution_control.limits)
     try:
         loaded = store.load(request.derivation_run_id)
     except Exception:
@@ -134,7 +141,7 @@ def run_paragraphs(
         result = analyze_once(
             request, provider=provider, composition_limits=composition_limits,
             provider_limits=provider_limits, paragraph_ordinal=paragraph.ordinal,
-            bounded_context=context_text(checkpoint),
+            bounded_context=context_text(checkpoint), execution_control=execution_control,
         )
         key = _entry_key(binding, paragraph.ordinal)
         entry = CommittedParagraph(

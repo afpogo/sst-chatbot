@@ -6,9 +6,14 @@ import pytest
 from app.article_processing.provider import (
     ProviderBoundaryError, ProviderLimits, ProviderReply, analyze_once, parse_analysis_reply,
 )
+from app.article_processing.execution import ExecutionControl, ExecutionLimits
 from tests.test_article_processing_prompts import LIMITS, request
 
 LIMIT = ProviderLimits(max_response_bytes=4096, max_output_tokens=256, timeout_seconds=3)
+EXECUTION_LIMIT = ExecutionLimits(
+    token_policy_version="fake-token-counter-v1", max_input_tokens=2048,
+    max_context_window_tokens=4096,
+)
 PAYLOAD = dict(schema_version="article-analysis-v1", evidence=["synthetic evidence"],
                inferences=[], uncertainties=[], open_questions=[], synthesis="synthetic synthesis")
 
@@ -26,8 +31,35 @@ class FakeProvider:
         return self.reply
 
 
-def invoke(fake):
-    return analyze_once(request(), provider=fake, composition_limits=LIMITS, provider_limits=LIMIT)
+class FakeLifecycle:
+    def __init__(self, status="running"):
+        self.status = status
+        self.calls = []
+
+    def get_status(self, run_id):
+        self.calls.append(run_id)
+        return self.status
+
+
+class FakeTokenCounter:
+    def __init__(self, count=100):
+        self.value = count
+        self.calls = []
+
+    def count(self, messages):
+        self.calls.append(messages)
+        return self.value
+
+
+def execution_control(status="running", count=100, limits=EXECUTION_LIMIT):
+    return ExecutionControl(FakeLifecycle(status), FakeTokenCounter(count), limits)
+
+
+def invoke(fake, control=None):
+    return analyze_once(
+        request(), provider=fake, composition_limits=LIMITS, provider_limits=LIMIT,
+        execution_control=control or execution_control(),
+    )
 
 
 def test_valid_content_and_explicit_limits_without_scope():
@@ -92,7 +124,7 @@ def test_input_failure_does_not_call_provider():
     with pytest.raises(ProviderBoundaryError, match="invalid_analysis_input"):
         analyze_once(request(), provider=fake,
                      composition_limits=LIMITS.model_copy(update={"max_source_bytes": 1}),
-                     provider_limits=LIMIT)
+                     provider_limits=LIMIT, execution_control=execution_control())
     assert fake.calls == []
 
 
@@ -110,7 +142,8 @@ def test_invalid_limits_and_reply_type():
     fake = FakeProvider()
     with pytest.raises(ProviderBoundaryError, match="invalid_provider_limits"):
         analyze_once(request(), provider=fake, composition_limits=LIMITS,
-                     provider_limits=LIMIT.model_copy(update={"max_output_tokens": True}))
+                     provider_limits=LIMIT.model_copy(update={"max_output_tokens": True}),
+                     execution_control=execution_control())
     assert fake.calls == []
     with pytest.raises(ProviderBoundaryError, match="invalid_provider_reply"):
         invoke(FakeProvider(reply="not a reply"))
