@@ -20,6 +20,9 @@ entries:
       path: specs/architecture/audience-safe-disclosure.yaml
       status: accepted
   capabilities:
+    - id: article-processing-execution
+      path: specs/capabilities/article-processing-execution.yaml
+      status: draft
     - id: provider-abstraction
       path: specs/capabilities/provider-abstraction.yaml
       status: draft
@@ -63,6 +66,9 @@ entries:
       path: specs/capabilities/sst-stakeholder-insights.yaml
       status: active
   integrations:
+    - id: sst-article-processing-handoff
+      path: specs/integrations/sst-article-processing-handoff.yaml
+      status: draft
     - id: sst-realtime-chat-runtime
       path: specs/integrations/sst-realtime-chat-runtime.yaml
       status: draft

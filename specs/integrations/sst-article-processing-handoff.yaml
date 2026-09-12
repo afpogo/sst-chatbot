@@ -1,0 +1,93 @@
+version: 1
+kind: integration
+id: sst-article-processing-handoff
+status: draft
+title: SST durable article-processing handoff
+
+protocol:
+  id: sst-article-processing-handoff-v1
+  version: "1.0.0"
+  implementation_status: contract-only
+
+peers:
+  sst_chatbot:
+    authority: derivation-execution
+    inbound:
+      method: POST
+      path: /internal/v1/article-processing/executions
+      caller: sst-bend
+      audience: sst-chatbot
+      scope: article-processing:execute
+  sst_bend:
+    authority: authorization-lifecycle-and-persistence
+    outbound_calls:
+      - {method: GET, path: /4uentes/v1/internal/article-processing/runs/:runId/execution-state, scope: "article-processing:read"}
+      - {method: POST, path: /4uentes/v1/internal/article-processing/runs/:runId/checkpoints, scope: "article-processing:write"}
+      - {method: POST, path: /4uentes/v1/internal/article-processing/runs/:runId/final-candidates, scope: "article-processing:write"}
+    audience: sst-api
+    caller: sst-chatbot
+  four_uentes_auth:
+    authority: exact-service-grants
+    capability: article-processing-service-grants-v1
+
+compatibility_contract:
+  command_ref: specs/capabilities/article-processing-execution.yaml
+  local_pipeline_ref: specs/architecture/article-processing-pipeline.yaml
+  bend_contract_ref: sst-bend/specs/api/article-processing-handoff.yaml
+  command_matches:
+    - protocol_version
+    - run_id
+    - attempt_id
+    - lease_fence
+    - processing_mode
+    - source_snapshot.id
+    - source_snapshot.sha256
+    - prompt_snapshot.id
+    - prompt_snapshot.sha256
+    - idempotency_key
+    - correlation_id
+  bend_readback_matches:
+    - run_id
+    - attempt_id
+    - lease_fence
+    - processing_mode
+    - source_snapshot.id
+    - source_snapshot.sha256
+    - prompt_snapshot.id
+    - prompt_snapshot.sha256
+  bend_readback_authority:
+    - context_version
+    - confirmed_paragraphs
+    - final_candidate_status
+
+failure_policy:
+  fail_closed_on: [invalid_grant, lifecycle_unavailable, non_running_run, stale_lease, checkpoint_conflict, source_or_prompt_mismatch, invalid_response]
+  retryable_only_after_readback: [transport_timeout, lost_write_acknowledgement, provider_unavailable]
+  no_automatic_scope_fallback: true
+  no_legacy_scope_reuse: true
+
+privacy:
+  content_classification: private
+  trace_policy: metadata_only
+  browser_exposure: prohibited
+
+validation_target:
+  contract_first:
+    - "Bend and Chatbot protocol IDs and versions match."
+    - "All grant tuples match Auth exactly."
+    - "Both owners classify runtime as not implemented."
+  future_runtime:
+    - "A restart resumes after the last Bend-confirmed ordinal."
+    - "Duplicate checkpoints and final candidates are accepted at most once canonically."
+    - "Wrong or combined scopes fail without reading or writing article data."
+
+orchestrator_link:
+  orchestrator_repo: 4uentes-orchestor
+  state_kind: feature_state
+  state_id: article-agent-processing
+  capability_id: article-processing-execution-v1
+  work_origin: orchestrator-request
+  request_id: CR-SST-0225
+  evidence_ref: evidence/requests/CR-SST-0225/implementation-plan.md
+  status_hint: contract-only
+  correlation_id: CR-SST-0225

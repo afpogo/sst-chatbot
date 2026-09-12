@@ -14,6 +14,71 @@ publicado por el control-plane. La spec enlaza su repositorio y ruta.
 Esta unidad fija tipos de entrada y contenido de salida, no endpoints ni tablas.
 No cambia las APIs existentes de chat ni el transporte de propuestas de memoria.
 
+## Contrato wire target-state de CR-SST-0225
+
+Rol de esta sección: explicación derivada del contrato owner `draft`. Las
+fuentes técnicas son `specs/capabilities/article-processing-execution.yaml` y
+`specs/integrations/sst-article-processing-handoff.yaml`. No existe endpoint,
+cliente Bend ni grant ejecutable en este slice.
+
+Chatbot recibe un intento síncrono y acotado bajo
+`article-processing:execute`. Antes de llamar al provider lee el estado durable
+de Bend con `article-processing:read`; cada checkpoint y candidata final se
+propone con `article-processing:write`. El receipt local describe un intento y
+nunca reemplaza el readback canónico de Bend.
+
+<!-- visual-map:start -->
+
+```yaml
+visual_map:
+  schema_version: "1.0"
+  id: "cr-sst-0225-chatbot-execution-attempt"
+  type: "sequence"
+  question: "¿Cómo ejecuta Chatbot un intento reanudable sin apropiarse del lifecycle durable?"
+  abstraction_level: "Contrato wire target-state del owner sst-chatbot."
+  source_refs:
+    - "specs/capabilities/article-processing-execution.yaml"
+    - "specs/integrations/sst-article-processing-handoff.yaml"
+    - "specs/architecture/article-processing-pipeline.yaml"
+  request_ids: ["CR-SST-0225"]
+  observed_at: "2026-09-12"
+  authority_boundary: "Vista derivada del contrato draft; no representa endpoint, grant, provider o persistencia implementados."
+  textual_fallback_required: true
+```
+
+```mermaid
+sequenceDiagram
+    participant R as CR-SST-0225
+    participant B as sst-bend
+    participant C as sst-chatbot
+    R->>C: gobierna contrato del ejecutor
+    B->>C: execute attempt con snapshots
+    C->>B: read lifecycle y checkpoint
+    B-->>C: running, lease y prefijo confirmado
+    loop ordinal pendiente dentro del límite
+        C->>C: provider y validación local
+        C->>B: write checkpoint con CAS
+        B-->>C: readback confirmado
+    end
+    C->>B: write candidata final
+    B-->>C: aceptación canónica o conflicto
+    C-->>B: receipt del intento sin autoridad durable
+```
+
+### Fallback textual
+
+```text
+CR-SST-0225 gobierna el contrato del ejecutor. Bend envía a Chatbot un intento execute con snapshots inmutables. Chatbot lee lifecycle, lease y checkpoint confirmados; deriva sólo ordinales pendientes y escribe cada checkpoint con CAS. Después propone una candidata final. Bend devuelve aceptación canónica o conflicto. Chatbot responde un receipt operativo y no conserva autoridad durable.
+```
+
+<!-- visual-map:end -->
+
+Si el lifecycle no está `running`, attempt o lease no coinciden, los hashes
+cambian o el readback no coincide, Chatbot detiene y descarta la salida. La
+versión de contexto se adopta siempre desde el readback de Bend. Un timeout se puede
+reintentar únicamente después de releer Bend. No hay fallback hacia
+`chat:process`, `agent-handoff:submit` ni scopes de memoria.
+
 ## Contratos implementados
 
 `src/app/article_processing/contracts.py` contiene valores Pydantic inmutables,
