@@ -1,0 +1,108 @@
+version: 1
+kind: capability
+id: article-processing-execution
+status: draft
+title: Durable article-processing execution attempt
+
+goal: >
+  Execute one bounded article-analysis attempt for a Bend-authorized run,
+  recovering confirmed state from Bend and returning only a non-authoritative
+  attempt receipt.
+
+publication:
+  capability_id: article-processing-execution-v1
+  role: producer
+  producer_repo: sst-chatbot
+  consumers_expected: [sst-bend]
+  publication_status: draft
+  implementation_status: contract-only
+
+protocol:
+  id: sst-article-processing-handoff-v1
+  version: "1.0.0"
+  endpoint:
+    method: POST
+    path: /internal/v1/article-processing/executions
+    transport: https-m2m-json
+  authorization:
+    caller: sst-bend
+    audience: sst-chatbot
+    token_use: service
+    exact_scope: article-processing:execute
+  command:
+    required_fields:
+      - protocol_version
+      - run_id
+      - attempt_id
+      - lease_fence
+      - processing_mode
+      - source_snapshot
+      - prompt_snapshot
+      - execution_limits
+      - idempotency_key
+      - correlation_id
+    private_fields:
+      - source_snapshot.content
+      - prompt_snapshot.user_instructions
+    immutable_bindings:
+      - run_id
+      - source_snapshot.id
+      - source_snapshot.sha256
+      - prompt_snapshot.id
+      - prompt_snapshot.sha256
+      - processing_mode
+      - execution_limits.policy_version
+  receipt:
+    fields: [run_id, attempt_id, outcome, last_confirmed_context_version, last_confirmed_ordinal, sanitized_code, retryable, correlation_id]
+    outcomes: [completed_candidate_submitted, checkpointed, stale, retryable_failure, terminal_failure]
+    authority: "Operational attempt observation only; Bend's readback remains canonical."
+
+execution_semantics:
+  invocation: "One synchronous bounded attempt; no detached in-memory background job."
+  start: "Read Bend lifecycle and confirmed checkpoint before the first provider call; require matching run, attempt, lease, mode and snapshot hashes, then adopt Bend's context version."
+  progress: "Submit each checkpoint to Bend and verify canonical readback before advancing."
+  finalization: "Submit a final candidate only after all required paragraphs are confirmed."
+  retry: "A new attempt reloads Bend state and skips only confirmed ordinals."
+  stale_output: "Discard provider output when lifecycle, lease, version or hashes no longer match."
+  exact_once_claim: false
+  effective_once_acceptance: "Bend CAS and idempotency prevent duplicate canonical acceptance."
+
+dependencies:
+  lifecycle_owner:
+    repo: sst-bend
+    contract: specs/api/article-processing-handoff.yaml
+    read_scope: article-processing:read
+    write_scope: article-processing:write
+  grant_owner:
+    repo: 4uentes-auth
+    capability: article-processing-service-grants-v1
+  local_pipeline:
+    spec: specs/architecture/article-processing-pipeline.yaml
+    implementation_status: execution-guard-local-with-fakes
+
+authority_boundary:
+  can_produce: [paragraph_derivation_candidate, final_derivation_candidate, attempt_receipt]
+  cannot_decide: [article_authorization, run_status, canonical_checkpoint, canonical_result, summary_publication, memory_adoption]
+  durable_store: none
+
+privacy_and_observability:
+  private: [article_content, paragraph_content, user_instructions, rendered_prompts, provider_responses, derivation_content]
+  metadata_only: [run_id, attempt_id, mode, ordinal, context_version, hashes, sanitized_code, correlation_id]
+  logging_rule: "Never serialize command or Bend callback bodies into logs or traces."
+
+non_goals:
+  - "Implement the HTTP endpoint, Bend client, provider adapter or token provider in this slice."
+  - "Own durable scheduling, leases or canonical persistence."
+  - "Create or accept user memory."
+  - "Create identities, secrets, infrastructure or deployment configuration."
+
+orchestrator_link:
+  orchestrator_repo: 4uentes-orchestor
+  state_kind: feature_state
+  state_id: article-agent-processing
+  capability_id: article-processing-execution-v1
+  work_origin: orchestrator-request
+  request_id: CR-SST-0225
+  evidence_ref: evidence/requests/CR-SST-0225/implementation-plan.md
+  status_hint: contract-only
+  correlation_id: CR-SST-0225

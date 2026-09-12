@@ -4,7 +4,7 @@ id: article-processing-pipeline
 status: draft
 owner: sst-chatbot
 request_id: CR-SST-0224
-revision: "2026-09-10-unit-6"
+revision: "2026-09-12-cr-sst-0225-contract-first"
 implementation_status: execution-guard-local
 source_contract:
   repo: 4uentes-orchestor
@@ -13,8 +13,26 @@ source_contract:
   version: "1.0.0"
 authority:
   local: "Typed article-analysis values and future provider execution."
-  external: "Bend authorizes articles and owns canonical persistence; control-plane owns lifecycle."
+  external: "Bend authorizes articles and owns canonical persistence; Auth owns exact M2M grants; control-plane owns request lifecycle."
   denies: [article_authorization, canonical_persistence, automatic_memory_adoption, deployment]
+wire_contract_target:
+  request_id: CR-SST-0225
+  implementation_status: contract-only
+  protocol_id: sst-article-processing-handoff-v1
+  protocol_version: "1.0.0"
+  capability_ref: specs/capabilities/article-processing-execution.yaml
+  integration_ref: specs/integrations/sst-article-processing-handoff.yaml
+  inbound_execution:
+    method: POST
+    path: /internal/v1/article-processing/executions
+    caller: sst-bend
+    audience: sst-chatbot
+    scope: article-processing:execute
+  bend_callbacks:
+    caller: sst-chatbot
+    audience: sst-api
+    scopes: [article-processing:read, article-processing:write]
+  attempt_model: "One synchronous bounded attempt; Bend's durable readback controls retry and recovery."
 local_contract:
   module: src/app/article_processing/contracts.py
   wire_protocol: false
@@ -100,12 +118,12 @@ not_implemented:
   - token-aware context compaction and provider-side interruption of in-flight calls
   - durable Bend lifecycle/status adapter
   - canonical final acceptance and result persistence
-  - durable Bend transport under CR-SST-0225
+  - runtime implementation of the drafted CR-SST-0225 Bend transport
   - frontend experience and end-to-end QA
 open_decisions:
   - "TODO: Select production token ceilings per provider/model and a deterministic compaction policy."
-  - "TODO: Integrate checkpoint compare-and-swap and caller-triggered retries with Bend without owning production scheduling."
-  - "TODO: Map local immutable values to the approved Bend wire contract in CR-SST-0225."
+  - "TODO: Implement the drafted checkpoint compare-and-swap and caller-triggered retry adapters after owner authorization."
+  - "TODO: Confirm bounded attempt limits and final wire field sizes during runtime implementation."
 local_evidence:
   - src/app/article_processing/finalization.py
   - src/app/prompts/catalog/tasks/article_final_stage.yaml
@@ -122,6 +140,9 @@ local_evidence:
   - src/app/article_processing/contracts.py
   - tests/test_article_processing_contracts.py
   - docs/architecture/article-processing-pipeline.md
+  - specs/capabilities/article-processing-execution.yaml
+  - specs/integrations/sst-article-processing-handoff.yaml
+  - docs/tasks/2026-09-12-cr-sst-0225-article-processing-handoff-contract.md
 validation:
   - "python -m pytest tests/test_article_processing_contracts.py"
   - "python scripts/check.py"
